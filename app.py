@@ -11,21 +11,34 @@ st.write("Sistem terintegrasi database Google Sheets (Header Baris 2).")
 
 # =========================================================================
 # ⚠️ PASTE LINK GOOGLE SHEETS ANDA YANG SUDAH JADI 'ANYONE WITH THE LINK' DI SINI
-URL_SHEET = "https://docs.google.com/spreadsheets/d/1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4"
+URL_SHEET = "# Ganti baris nomor 14 di app.py Anda menjadi kode ID bersih seperti ini:
+URL_SHEET = "https://google.com"
 # =========================================================================
 
-# Fungsi membaca database Google Sheets secara real-time
-@st.cache_data(ttl=5) # Data disegarkan setiap 5 detik
+# Fungsi membaca database Google Sheets khusus untuk Sheet "Master 2026"
+@st.cache_data(ttl=5)
 def muat_database(url):
     try:
-        base_url = url.split("/edit")
-        csv_url = f"{base_url}/export?format=csv"
+        # Jika variabel url masih berbentuk list, ubah paksa menjadi string teks biasa
+        if isinstance(url, list):
+            url = str(url[0])
+            
+        # Mengambil ID unik Google Sheets secara aman
+        if "/d/" in url:
+            sheet_id = url.split("/d/")[1].split("/")[0]
+        else:
+            sheet_id = url.strip()
+            
+        # Nama sheet target sesuai database Anda
+        nama_sheet = "Master 2026"
         
-        # skiprows=1 digunakan untuk melompati baris pertama (Baris 1 di Excel)
-        # Sehingga Baris 2 otomatis naik menjadi Header resmi bagi Python
+        # Format URL khusus Google API untuk menarik data dari sheet tertentu ke bentuk CSV
+        csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={nama_sheet}"
+        
+        # skiprows=1 untuk melewati baris pertama (Baris 1) agar Baris 2 menjadi Header resmi
         df_db = pd.read_csv(csv_url, skiprows=1)
         
-        # Bersihkan nama kolom dari spasi di awal/akhir agar pencarian akurat
+        # Bersihkan nama kolom dari spasi tidak sengaja
         df_db.columns = df_db.columns.str.strip()
         
         return df_db
