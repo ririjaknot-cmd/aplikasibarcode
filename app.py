@@ -5,14 +5,14 @@ import io
 import base64
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Generator QR Code Mandiri", layout="centered")
-st.title("📦 Sistem Input & Cetak QR Code Mandiri")
-st.write("Isi data ID, Jumlah Box, dan Tujuan secara mandiri langsung pada tabel di bawah ini.")
+st.set_page_config(page_title="Generator QR Code 50x50mm", layout="centered")
+st.title("📦 Printer QR Code Mandiri (50x50mm)")
+st.write("Isi data pada tabel di bawah. Hasil cetak otomatis diformat khusus untuk ukuran label kertas 50x50 mm.")
 
 st.subheader("📝 Tabel Input Data")
 st.caption("Tips: Klik tombol '+' di bawah tabel untuk menambah baris baru. Klik dua kali pada sel untuk mengetik.")
 
-# Struktur data awal kolom tabel input web (Semua kolom bisa diisi mandiri)
+# Struktur data awal kolom tabel input web
 data_awal = [
     {"Masukkan ID": "", "Jumlah Box": 1, "Tujuan Pengiriman": ""}
 ]
@@ -37,35 +37,58 @@ if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
         st.error("Silakan isi data pada tabel terlebih dahulu!")
     else:
         try:
-            with st.spinner("Menyiapkan lembar cetak QR Code..."):
+            with st.spinner("Menyiapkan lembar cetak khusus 50x50mm..."):
                 
-                # Desain layout kertas cetak (HTML + CSS) 1 kolom lurus menurun ke bawah
+                # Desain layout kertas cetak (HTML + CSS) presisi untuk ukuran kertas thermal 50mm x 50mm
                 html_konten = """
                 <html>
                 <head>
                 <style>
-                    body { font-family: Arial, sans-serif; margin: 10px; background: white; color: black; }
+                    /* Mengatur ukuran halaman cetak pas 50mm x 50mm */
+                    @page {
+                        size: 50mm 50mm;
+                        margin: 0; /* Menghilangkan margin bawaan kertas browser */
+                    }
+                    body { 
+                        font-family: 'Arial', sans-serif; 
+                        margin: 0; 
+                        padding: 0;
+                        background: white; 
+                        color: black; 
+                        width: 50mm;
+                        height: 50mm;
+                        box-sizing: border-box;
+                    }
                     .kontainer-vertikal {
                         display: flex;
                         flex-direction: column;
                         align-items: center;
-                        gap: 20px; /* Jarak antar label */
                     }
                     .kotak-label {
-                        border: 1px solid #CCCCCC;
-                        padding: 15px;
+                        width: 50mm;
+                        height: 50mm;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
                         text-align: center;
-                        border-radius: 4px;
-                        width: 250px; /* Lebar kotak label pas untuk printer thermal */
-                        page-break-inside: avoid; /* Mencegah label terpotong di tengah halaman */
+                        padding: 2mm;
+                        box-sizing: border-box;
+                        page-break-after: always; /* Membuat setiap boks otomatis pindah ke kertas label baru */
                     }
                     .info-teks {
-                        font-size: 12px;
-                        text-align: left;
-                        margin-top: 8px;
-                        line-height: 16px;
+                        font-size: 9px; /* Ukuran font disesuaikan agar pas di lebar 50mm */
+                        font-weight: bold;
+                        text-align: center;
+                        margin-top: 2mm;
+                        width: 100%;
+                        word-wrap: break-word; /* Memastikan teks panjang otomatis turun ke bawah jika penuh */
+                        line-height: 11px;
                     }
-                    img { width: 130px; height: 130px; }
+                    img { 
+                        width: 32mm; /* Ukuran QR Code optimal di dalam area kertas 50mm */
+                        height: 32mm; 
+                    }
                 </style>
                 </head>
                 <body>
@@ -86,8 +109,11 @@ if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
                     
                     # Logika duplikasi cetak berdasarkan Jumlah Box
                     for b in range(1, jumlah_box + 1):
+                        # Format gabungan teks di dalam QR Code (Misal: ID-1/2-Jakarta Pusat)
+                        teks_gabungan = f"{id_inputan}-{b}/{jumlah_box}-{tujuan}"
+                        
                         qr = qrcode.QRCode(version=1, box_size=10, border=1)
-                        qr.add_data(id_inputan)
+                        qr.add_data(teks_gabungan)
                         qr.make(fit=True)
                         img_qr = qr.make_image(fill_color="black", back_color="white")
                         
@@ -97,14 +123,12 @@ if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
                         
                         img_base64 = base64.b64encode(fp.read()).decode('utf-8')
                         
-                        # Susun label QR Code masuk ke dalam susunan menurun vertikal
+                        # Susun label QR Code masuk ke dalam susunan vertikal dengan teks ringkas langsung tanpa judul
                         html_konten += f"""
                         <div class="kotak-label">
                             <img src="data:image/png;base64,{img_base64}" />
                             <div class="info-teks">
-                                <b>ID:</b> {id_inputan}<br/>
-                                <b>Box:</b> {b}/{jumlah_box}<br/>
-                                <b>Tujuan:</b> {tujuan}
+                                {teks_gabungan}
                             </div>
                         </div>
                         """
