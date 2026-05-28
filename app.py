@@ -7,7 +7,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Generator QR Code 50x50mm", layout="centered")
 st.title("📦 Printer QR Code Mandiri (50x50mm)")
-st.write("Isi data pada tabel di bawah. Format teks di label otomatis tersusun vertikal menurun.")
+st.write("Format tampilan cetak: QR ➡️ Tujuan Pengiriman ➡️ ID Unik ➡️ Nomor Box (Menurun).")
 
 st.subheader("📝 Tabel Input Data")
 st.caption("Tips: Klik tombol '+' di bawah tabel untuk menambah baris baru. Klik dua kali pada sel untuk mengetik.")
@@ -72,22 +72,22 @@ if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
                         justify-content: center;
                         align-items: center;
                         text-align: center;
-                        padding: 1.5mm;
+                        padding: 2mm; /* Ditambah sedikit agar tulisan tidak mepet ke pinggir kertas */
                         box-sizing: border-box;
                         page-break-after: always; /* Otomatis ganti kertas label thermal baru */
                     }
                     .info-teks {
-                        font-size: 10px; /* Ukuran font disesuaikan agar terbaca jelas */
+                        font-size: 11px; /* Ukuran tulisan dinaikkan dari 9px ke 11px agar ideal dibaca mata */
                         font-weight: bold;
                         text-align: center;
-                        margin-top: 1mm;
+                        margin-top: 1.5mm; /* Memberikan jeda ruang yang pas dari bawah QR Code */
                         width: 100%;
                         word-wrap: break-word;
-                        line-height: 12px; /* Jarak baris teks vertikal */
+                        line-height: 14px; /* Memberikan jarak antar baris teks agar tidak menumpuk */
                     }
                     img { 
-                        width: 28mm; /* Ukuran QR Code seimbang dengan 3 baris teks di bawahnya */
-                        height: 28mm; 
+                        width: 25mm; /* Ukuran QR Code disetel pas di tengah area (setengah dari lebar total kertas) */
+                        height: 25mm; 
                     }
                 </style>
                 </head>
@@ -109,7 +109,7 @@ if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
                     
                     # Logika duplikasi cetak berdasarkan Jumlah Box
                     for b in range(1, jumlah_box + 1):
-                        # Format data di dalam kode QR Code (Bisa disesuaikan jika ingin digabung atau ID saja)
+                        # Data yang tertanam di dalam scan QR Code (ID-Box-Tujuan)
                         data_qr = f"{id_inputan}-{b}/{jumlah_box}-{tujuan}"
                         
                         qr = qrcode.QRCode(version=1, box_size=10, border=1)
@@ -123,14 +123,14 @@ if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
                         
                         img_base64 = base64.b64encode(fp.read()).decode('utf-8')
                         
-                        # Susun label QR Code masuk ke dalam susunan vertikal berbaris kebawah sesuai contoh
+                        # Susun label QR Code masuk ke dalam susunan vertikal: QR -> Tujuan -> ID -> Box
                         html_konten += f"""
                         <div class="kotak-label">
                             <img src="data:image/png;base64,{img_base64}" />
                             <div class="info-teks">
+                                {tujuan}<br/>
                                 {id_inputan}<br/>
-                                {b}/{jumlah_box}<br/>
-                                {tujuan}
+                                {b}/{jumlah_box}
                             </div>
                         </div>
                         """
