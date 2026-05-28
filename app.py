@@ -29,7 +29,7 @@ def muat_database(url_input):
         else:
             sheet_id = url_str
             
-        nama_sheet_aman = "Master%202026"
+        nama_sheet_aman = "Master 2026"
         
         # Membuat tautan ekspor CSV resmi dari Google API
         csv_url = f"https://google.com{sheet_id}/gviz/tq?tqx=out:csv&sheet={nama_sheet_aman}"
