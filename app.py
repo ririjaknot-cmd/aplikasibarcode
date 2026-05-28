@@ -12,7 +12,7 @@ st.write("Tujuan Pengiriman & Nama PIC (Operator) akan terisi otomatis di dalam 
 
 # =========================================================================
 # ⚠️ PASTIKAN LINK GOOGLE SHEETS ANDA BENAR (ANYONE WITH THE LINK AS VIEWER)
-URL_SHEET = "1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4"
+URL_SHEET = "https://docs.google.com/spreadsheets/d/1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4/edit?usp=sharing"
 # =========================================================================
 
 # Fungsi membaca database Google Sheets khusus untuk Sheet "Master 2026"
