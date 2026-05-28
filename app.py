@@ -10,33 +10,29 @@ st.title("📦 Sistem Input & Cetak QR Code Otomatis")
 st.write("Sistem terintegrasi database Google Sheets (Sheet: Master 2026 | Header Baris 2).")
 
 # =========================================================================
-# ⚠️ TENTUKAN LINK GOOGLE SHEETS ANDA SECARA BENAR DI SINI
+# ⚠️ PASTE LINK GOOGLE SHEETS ANDA SECARA UTUH DI SINI (Contoh format benar):
+# URL_SHEET = "https://google.com"
 URL_SHEET = "https://docs.google.com/spreadsheets/d/1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4/edit?usp=sharing"
 # =========================================================================
 
 # Fungsi membaca database Google Sheets khusus untuk Sheet "Master 2026"
 @st.cache_data(ttl=5) # Data disegarkan otomatis setiap 5 detik
-def muat_database(url):
+def muat_database(url_input):
     try:
-        # Konversi objek list ke string jika tidak sengaja terbaca list oleh python
-        if isinstance(url, list):
-            url = str(url[0])
-            
-        url_str = str(url).strip()
-            
-        # Mengambil ID unik Google Sheets secara aman di antara teks /d/ dan /edit
-        if "://google.com" in url_str:
-            sheet_id = url_str.split("/d/")[1].split("/")[0]
+        # Validasi dasar memastikan link diisi string teks biasa
+        url_str = str(url_input).strip()
+        
+        # Ekstrak ID Spreadsheet secara aman tanpa metode split rawan error
+        # Kita hanya perlu mengganti bagian '/edit...' di ujung menjadi format ekspor resmi Google API
+        if "/edit" in url_str:
+            base_url = url_str.split("/edit")
         else:
-            sheet_id = url_str
+            base_url = url_str.rstrip("/")
             
-        # Mengubah spasi pada nama sheet menjadi format URL aman (%20)
         nama_sheet_aman = "Master%202026"
+        csv_url = f"{base_url}/export?format=csv&sheet={nama_sheet_aman}"
         
-        # Susun ulang URL API ekspor Google secara presisi dan bersih
-        csv_url = f"https://://google.com/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={nama_sheet_aman}"
-        
-        # skiprows=1 untuk melompati baris pertama (Baris 1) agar Baris 2 menjadi Header resmi
+        # skiprows=1 untuk melompati baris pertama (Baris 1) agar Baris 2 menjadi Header resmi (ID, Tujuan Pengiriman, Nama PIC)
         df_db = pd.read_csv(csv_url, skiprows=1)
         
         # Bersihkan nama kolom dari spasi tidak sengaja di awal/akhir kata
