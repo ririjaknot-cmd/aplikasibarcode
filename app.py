@@ -5,9 +5,9 @@ import io
 import base64
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Shipment Cabang Generator QR Code", layout="centered")
-st.title("📦 Sistem Input & Cetak QR Code Pengiriman")
-st.write("Sistem terintegrasi database Google Sheets (Header dimulai dari Baris 2).")
+st.set_page_config(page_title="Generator QR Code Massal", layout="centered")
+st.title("📦 Sistem Input & Cetak QR Code Otomatis")
+st.write("Sistem terintegrasi database Google Sheets (Header Baris 2).")
 
 # =========================================================================
 # ⚠️ PASTE LINK GOOGLE SHEETS ANDA YANG SUDAH JADI 'ANYONE WITH THE LINK' DI SINI
@@ -19,12 +19,13 @@ URL_SHEET = "https://docs.google.com/spreadsheets/d/1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1c
 def muat_database(url):
     try:
         base_url = url.split("/edit")
-        csv_url = f"{base_url[0]}/export?format=csv"
+        csv_url = f"{base_url}/export?format=csv"
         
-        # header=1 berarti melewati baris pertama (indeks 0) dan menjadikan Baris 2 sebagai nama kolom resmi
-        df_db = pd.read_csv(csv_url, header=1)
+        # skiprows=1 digunakan untuk melompati baris pertama (Baris 1 di Excel)
+        # Sehingga Baris 2 otomatis naik menjadi Header resmi bagi Python
+        df_db = pd.read_csv(csv_url, skiprows=1)
         
-        # Bersihkan spasi berlebih di nama kolom agar pencarian akurat
+        # Bersihkan nama kolom dari spasi di awal/akhir agar pencarian akurat
         df_db.columns = df_db.columns.str.strip()
         
         return df_db
@@ -35,17 +36,17 @@ def muat_database(url):
 # Memuat data dari cloud
 df_database = muat_database(URL_SHEET)
 
-# Input Nama Operator yang sedang memegang komputer
+# Input Nama Operator/User yang sedang memakai komputer
 nama_operator = st.text_input("👤 Nama Operator yang Bertugas saat ini:", placeholder="Ketik nama Anda di sini...")
 
 if nama_operator:
-    st.success(f"Sesi Aktif: **{nama_operator}** siap memproses dan mencetak.")
+    st.success(f"Sesi Aktif: **{nama_operator}** siap memproses.")
 
 st.subheader("📝 Tabel Input Data")
 
 # Struktur kolom input tabel web
 data_awal = [
-    {"ID Unik": "", "Jumlah Box": 1, "Tujuan Pengiriman": "(Otomatis)"},
+    {"id_unik": "", "jumlah_box": 1, "tujuan_pengiriman": "(Otomatis)"},
 ]
 
 df_input = st.data_editor(
@@ -53,9 +54,9 @@ df_input = st.data_editor(
     num_rows="dynamic", 
     use_container_width=True,
     column_config={
-        "ID Unik": st.column_config.TextColumn("ID Unik", required=True),
-        "Jumlah Box": st.column_config.NumberColumn("Jumlah Box", min_value=1, default=1, required=True),
-        "Tujuan Pengiriman": st.column_config.TextColumn("Tujuan Pengiriman", disabled=True)
+        "id_unik": st.column_config.TextColumn("Masukkan ID", required=True),
+        "jumlah_box": st.column_config.NumberColumn("Jumlah Box", min_value=1, default=1, required=True),
+        "tujuan_pengiriman": st.column_config.TextColumn("Tujuan Pengiriman", disabled=True)
     }
 )
 
@@ -65,13 +66,13 @@ if st.button("🖨️ Ambil Data & Cetak QR Code Langsung", type="primary"):
     
     if not nama_operator.strip():
         st.error("Wajib mengisi Nama Operator terlebih dahulu sebelum mencetak!")
-    elif df.empty or df['ID Unik'].isna().all() or df['ID Unik'].eq('').all():
-        st.error("Silakan isi data ID Unik pada tabel terlebih dahulu!")
+    elif df.empty or df['id_unik'].isna().all() or df['id_unik'].eq('').all():
+        st.error("Silakan isi data ID pada tabel terlebih dahulu!")
     else:
         try:
             with st.spinner("Mencocokkan data dengan database cloud..."):
                 
-                # Desain layout kertas cetak (HTML + CSS) bersih tanpa tulisan Nama PIC
+                # Desain layout kertas cetak (HTML + CSS) bersih 3 kolom tanpa tulisan PIC
                 html_konten = """
                 <html>
                 <head>
@@ -109,17 +110,17 @@ if st.button("🖨️ Ambil Data & Cetak QR Code Langsung", type="primary"):
                 ringkasan_proses = []
                 
                 for index, row in df.iterrows():
-                    if pd.isna(row['ID Unik']) or str(row['ID Unik']).strip() == "":
+                    if pd.isna(row['id_unik']) or str(row['id_unik']).strip() == "":
                         continue
                         
-                    id_input = str(row['ID Unik']).strip()
-                    jumlah_box = int(row['Jumlah Box']) if not pd.isna(row['Jumlah Box']) else 1
+                    id_inputan = str(row['id_unik']).strip()
+                    jumlah_box = int(row['jumlah_box']) if not pd.isna(row['jumlah_box']) else 1
                     
-                    # LOGIKA PENCARIAN: Mencocokkan input dengan Kolom "ID" di Google Sheets Anda
-                    pencarian = df_database[df_database['ID'].astype(str).str.strip() == id_input]
+                    # LOGIKA PENCARIAN: Mencocokkan input dengan Kolom 'ID' (A2) di Google Sheets
+                    pencarian = df_database[df_database['ID'].astype(str).str.strip() == id_inputan]
                     
                     if not pencarian.empty:
-                        # Mengambil data dari Kolom D (Tujuan Pengiriman) dan Kolom I (Nama PIC)
+                        # Mengambil data dari Kolom 'Tujuan Pengiriman' (D2) dan Kolom 'Nama PIC' (I2)
                         tujuan = str(pencarian.iloc[0]['Tujuan Pengiriman'])
                         nama_pic = str(pencarian.iloc[0]['Nama PIC'])
                     else:
@@ -128,19 +129,19 @@ if st.button("🖨️ Ambil Data & Cetak QR Code Langsung", type="primary"):
                     
                     ada_data_valid = True
                     
-                    # Simpan informasi untuk ditampilkan sebagai laporan verifikasi di halaman web
+                    # Simpan informasi untuk verifikasi layar web
                     ringkasan_proses.append({
-                        "ID Unik": id_input,
+                        "ID Barang": id_inputan,
                         "Jumlah Box": jumlah_box,
-                        "Tujuan Pengiriman": tujuan,
-                        "Nama PIC (Google Sheets)": nama_pic
+                        "Tujuan Tujuan": tujuan,
+                        "Nama PIC (Database)": nama_pic
                     })
                     
-                    # Logika pembuatan lembar lembaran cetak QR Code jika ID ditemukan
-                    if目的 != "ID TIDAK DITEMUKAN":
+                    # Pembuatan gambar QR Code
+                    if tujuan != "ID TIDAK DITEMUKAN":
                         for b in range(1, jumlah_box + 1):
                             qr = qrcode.QRCode(version=1, box_size=10, border=1)
-                            qr.add_data(id_input)
+                            qr.add_data(id_inputan)
                             qr.make(fit=True)
                             img_qr = qr.make_image(fill_color="black", back_color="white")
                             
@@ -150,13 +151,12 @@ if st.button("🖨️ Ambil Data & Cetak QR Code Langsung", type="primary"):
                             
                             img_base64 = base64.b64encode(fp.read()).decode('utf-8')
                             
-                            # --- ISI LABEL CETAK ---
-                            # Nama PIC sengaja dikosongkan dari label cetak sesuai permintaan Anda
+                            # Tampilan Kertas Label Cetak (Hanya ID, Box, dan Tujuan)
                             html_konten += f"""
                             <div class="kotak-label">
                                 <img src="data:image/png;base64,{img_base64}" />
                                 <div class="info-teks">
-                                    <b>ID:</b> {id_input}<br/>
+                                    <b>ID:</b> {id_inputan}<br/>
                                     <b>Box:</b> {b}/{jumlah_box}<br/>
                                     <b>Tujuan:</b> {tujuan}
                                 </div>
@@ -167,7 +167,7 @@ if st.button("🖨️ Ambil Data & Cetak QR Code Langsung", type="primary"):
                 </div>
                 <script>
                     window.onload = function() {
-                        window.print(); /* Otomatis memicu jendela cetak printer */
+                        window.print(); /* Otomatis memicu jendela cetak printer browser */
                     }
                 </script>
                 </body>
@@ -175,16 +175,16 @@ if st.button("🖨️ Ambil Data & Cetak QR Code Langsung", type="primary"):
                 """
                 
                 if ada_data_valid:
-                    # MENAMPILKAN RINGKASAN DI WEB (Termasuk Nama PIC untuk verifikasi user)
+                    # Menampilkan verifikasi ringkasan di web (Termasuk Nama PIC)
                     st.write("---")
                     st.subheader("📊 Hasil Verifikasi Pengiriman:")
                     st.dataframe(pd.DataFrame(ringkasan_proses), use_container_width=True)
                     
-                    # Lempar dokumen ke printer
+                    # Mengirim lembar cetakan ke printer
                     components.html(html_konten, height=0, width=0)
                     st.balloons()
                 else:
                     st.warning("Tidak ada data valid untuk diproses.")
                     
         except Exception as e:
-            st.error(f"Terjadi kesalahan pembacaan database: {e}. Pastikan header Anda di baris ke-2 tertulis persis 'ID', 'Tujuan Pengiriman', dan 'Nama PIC'.")
+            st.error(f"Terjadi kesalahan pembacaan database: {e}. Periksa kembali nama header di Google Sheets Anda.")
