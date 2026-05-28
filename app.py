@@ -13,7 +13,7 @@ st.write("Sistem terintegrasi Google Sheets (Sheet: Draft Summary | Header Merge
 
 # =========================================================================
 # ⚠️ PASTIKAN LINK GOOGLE SHEETS ANDA BENAR (ANYONE WITH THE LINK AS VIEWER)
-URL_SHEET = "https://docs.google.com/spreadsheets/d/1xW1mTTQzBnZ4Ah7UvRgpIR18geBfF1RrzGVvoRvZyPc/edit?usp=sharing"
+URL_SHEET = "https://google.com"
 # =========================================================================
 
 # Fungsi membaca database Google Sheets khusus untuk Sheet "Draft Summary"
@@ -34,14 +34,15 @@ def muat_database(url_input):
         # Sehingga Baris 4 otomatis naik menjadi Judul Kolom (Header) resmi bagi Python
         df_db = pd.read_csv(csv_url, skiprows=3)
         
-        # Karena Baris 5 adalah bagian dari Merge Cell, Python akan membacanya sebagai baris data pertama.
-        # Kita harus menghapus baris pertama index ke-0 ini agar data asli di Baris 6 tidak bergeser.
-        if not df_db.empty:
-            df_db = df_db.drop(df_db.index[0]).reset_index(drop=True)
-            
         # Bersihkan nama kolom dari spasi tidak sengaja di awal/akhir kata
         df_db.columns = df_db.columns.str.strip()
         
+        # Karena Baris 5 adalah bagian dari Merge Cell, Python membacanya sebagai baris data pertama (index 0).
+        # Kita gunakan .iloc[1:] untuk memotong dan membuang baris sisa merge tersebut, 
+        # sehingga data baris 6 naik menjadi baris pertama yang siap dibaca.
+        if not df_db.empty:
+            df_db = df_db.iloc[1:].reset_index(drop=True)
+            
         return df_db
     except Exception as e:
         st.error(f"⚠️ Gagal menghubungkan ke Database Google Sheets: {e}")
@@ -106,7 +107,9 @@ if diubah:
 
 # TOMBOL UTAMA UNTUK PROSES CETAK
 if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
-    if df_edit.empty or df_edit['Masukkan ID'].isna().all() or df_edit['Masukkan ID'].eq('').all():
+    df = pd.DataFrame(df_edit)
+    
+    if df.empty or df['Masukkan ID'].isna().all() or df['Masukkan ID'].eq('').all():
         st.error("Silakan isi data ID pada tabel terlebih dahulu!")
     else:
         try:
@@ -169,7 +172,7 @@ if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
                 
                 ada_data_valid = False
                 
-                for index, row in df_edit.iterrows():
+                for index, row in df.iterrows():
                     if pd.isna(row['Masukkan ID']) or str(row['Masukkan ID']).strip() == "":
                         continue
                         
@@ -221,5 +224,3 @@ if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
                     components.html(html_konten, height=0, width=0)
                     st.balloons()
                 else:
-                    st.warning("Tidak ada data valid yang bisa dicetak. Pastikan ID terdaftar di Google Sheets.")
-                    
