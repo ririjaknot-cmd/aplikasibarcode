@@ -4,37 +4,40 @@ import qrcode
 import io
 import base64
 import streamlit.components.v1 as components
+import re
 
 st.set_page_config(page_title="Generator QR Code Massal", layout="centered")
 st.title("📦 Sistem Input & Cetak QR Code Otomatis")
 st.write("Sistem terintegrasi database Google Sheets (Sheet: Master 2026 | Header Baris 2).")
 
 # =========================================================================
-# ⚠️ PASTE LINK LENGKAP GOOGLE SHEETS ANDA DI SINI
-URL_SHEET = "https://docs.google.com/spreadsheets/d/1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4/edit?usp=sharing"
+# ⚠️ MASUKKAN LINK LENGKAP GOOGLE SHEETS ANDA YANG ASLI DI SINI
+URL_SHEET = "https://google.com"
 # =========================================================================
 
 # Fungsi membaca database Google Sheets khusus untuk Sheet "Master 2026"
-@st.cache_data(ttl=5)
+@st.cache_data(ttl=5) # Data disegarkan otomatis setiap 5 detik
 def muat_database(url_input):
     try:
         url_str = str(url_input).strip()
         
-        # Ekstrak ID Spreadsheet dengan ekspresi logika yang bersih
-        if "/d/" in url_str:
-            sheet_id = url_str.split("/d/")[1].split("/")[0]
+        # MENGGUNAKAN REGEX (Sistem Ekstraksi Pintar Resmi)
+        # Menemukan ID Google Sheets secara otomatis di dalam teks link tanpa metode split manual
+        match = re.search(r"/d/([a-zA-Z0-9-_]+)", url_str)
+        if match:
+            sheet_id = match.group(1)
         else:
             sheet_id = url_str
             
         nama_sheet_aman = "Master%202026"
         
-        # Membuka gerbang data menggunakan Google API Export link resmi
+        # Membuat tautan ekspor CSV resmi dari Google API
         csv_url = f"https://google.com{sheet_id}/gviz/tq?tqx=out:csv&sheet={nama_sheet_aman}"
         
-        # skiprows=1 untuk melompati Baris 1 (Baris 2 menjadi Judul Kolom: ID, Tujuan Pengiriman, Nama PIC)
+        # skiprows=1 untuk melompati Baris 1 agar Baris 2 otomatis naik menjadi Judul Kolom (ID, Tujuan Pengiriman, Nama PIC)
         df_db = pd.read_csv(csv_url, skiprows=1)
         
-        # Bersihkan nama kolom dari spasi tidak sengaja
+        # Bersihkan nama kolom dari spasi tidak sengaja di awal/akhir kata
         df_db.columns = df_db.columns.str.strip()
         
         return df_db
@@ -53,7 +56,7 @@ if nama_operator:
 
 st.subheader("📝 Tabel Input Data")
 
-# Struktur kolom input tabel web
+# Struktur kolom input tabel web (Tujuan dikunci karena akan di-bypass otomatis dari database)
 data_awal = [
     {"id_unik": "", "jumlah_box": 1, "tujuan_pengiriman": "(Otomatis)"},
 ]
@@ -129,6 +132,7 @@ if st.button("🖨️ Ambil Data & Cetak QR Code Langsung", type="primary"):
                     pencarian = df_database[df_database['ID'].astype(str).str.strip() == id_inputan]
                     
                     if not pencarian.empty:
+                        # Mengambil data dari Kolom 'Tujuan Pengiriman' (D2) dan Kolom 'Nama PIC' (I2)
                         tujuan = str(pencarian.iloc['Tujuan Pengiriman'])
                         nama_pic = str(pencarian.iloc['Nama PIC'])
                     else:
@@ -137,6 +141,7 @@ if st.button("🖨️ Ambil Data & Cetak QR Code Langsung", type="primary"):
                     
                     ada_data_valid = True
                     
+                    # Simpan informasi untuk verifikasi mata di layar web
                     ringkasan_proses.append({
                         "ID Barang": id_inputan,
                         "Jumlah Box": jumlah_box,
@@ -144,7 +149,7 @@ if st.button("🖨️ Ambil Data & Cetak QR Code Langsung", type="primary"):
                         "Nama PIC (Database)": nama_pic
                     })
                     
-                    # Pembuatan gambar QR Code
+                    # Pembuatan gambar QR Code (Hanya jika ID terdaftar resmi di Google Sheets)
                     if tujuan != "ID TIDAK DITEMUKAN":
                         for b in range(1, jumlah_box + 1):
                             qr = qrcode.QRCode(version=1, box_size=10, border=1)
@@ -158,6 +163,7 @@ if st.button("🖨️ Ambil Data & Cetak QR Code Langsung", type="primary"):
                             
                             img_base64 = base64.b64encode(fp.read()).decode('utf-8')
                             
+                            # Tampilan Kertas Label Cetak (Hanya ID, Box, dan Tujuan - Nama PIC tidak dimasukkan)
                             html_konten += f"""
                             <div class="kotak-label">
                                 <img src="data:image/png;base64,{img_base64}" />
@@ -173,7 +179,7 @@ if st.button("🖨️ Ambil Data & Cetak QR Code Langsung", type="primary"):
                 </div>
                 <script>
                     window.onload = function() {
-                        window.print();
+                        window.print(); /* Otomatis memicu jendela cetak printer komputer browser */
                     }
                 </script>
                 </body>
@@ -181,14 +187,16 @@ if st.button("🖨️ Ambil Data & Cetak QR Code Langsung", type="primary"):
                 """
                 
                 if ada_data_valid:
+                    # Menampilkan laporan verifikasi di web (Termasuk Nama PIC hasil pencarian database)
                     st.write("---")
                     st.subheader("📊 Hasil Verifikasi Pengiriman:")
                     st.dataframe(pd.DataFrame(ringkasan_proses), use_container_width=True)
                     
+                    # Melemparkan data cetak langsung ke hardware printer browser
                     components.html(html_konten, height=0, width=0)
                     st.balloons()
                 else:
                     st.warning("Tidak ada data valid untuk diproses.")
                     
         except Exception as e:
-            st.error(f"⚠️ Terjadi kesalahan: {e}")
+            st.error(f"⚠️ Terjadi kesalahan pembacaan kolom database: {e}. Pastikan nama kolom di Google Sheets Anda tepat di A2='ID', D2='Tujuan Pengiriman', I2='Nama PIC'.")
