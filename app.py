@@ -7,9 +7,9 @@ import streamlit.components.v1 as components
 import urllib.parse
 import re
 
-st.set_page_config(page_title="Generator QR Code Lokal", layout="centered")
-st.title("📦 Sistem Printer QR Code Lokal (50x50mm)")
-st.write("Sistem Terintegrasi Google Sheets (Tab Sheet: Master 2026 | Header Baris 1).")
+st.set_page_config(page_title="Generator QR Code Otomatis", layout="centered")
+st.title("📦 Sistem Printer QR Code Otomatis (50x50mm)")
+st.write("Sistem otomatis sinkron dengan Google Sheets Master 2026 (Header Baris 1).")
 
 # =========================================================================
 # ⚠️ PASTIKAN LINK GOOGLE SHEETS ANDA BENAR (ANYONE WITH THE LINK AS VIEWER)
@@ -17,7 +17,7 @@ URL_SHEET = "https://google.com"
 # =========================================================================
 
 # Fungsi membaca database Google Sheets khusus untuk Sheet "Master 2026"
-@st.cache_data(ttl=2) # Data disegarkan otomatis setiap 2 detik secara lokal
+@st.cache_data(ttl=5) # Data otomatis sinkron dan segar setiap 5 detik
 def muat_database(url_input):
     try:
         url_str = str(url_input).strip()
@@ -27,14 +27,16 @@ def muat_database(url_input):
         else:
             sheet_id = url_str
             
-        # Mengonversi nama sheet "Master 2026" menjadi format URL aman
+        # Mengonversi nama sheet ke format URL
         nama_sheet_aman = urllib.parse.quote("Master 2026")
-        csv_url = f"https://google.com{sheet_id}/gviz/tq?tqx=out:csv&sheet={nama_sheet_aman}"
         
-        # Langsung membaca dari awal (Baris 1 otomatis menjadi judul kolom resmi bagi Python)
+        # MENGGUNAKAN JALUR EKSPOR KONTEN TERBUKA (Jauh lebih ringan & bypass proteksi DNS)
+        csv_url = f"https://google.com{sheet_id}/export?format=csv&sheet={nama_sheet_aman}"
+        
+        # Membaca data langsung dari internet
         df_db = pd.read_csv(csv_url)
         
-        # Bersihkan nama kolom dari spasi tidak sengaja di awal/akhir kata
+        # Bersihkan nama kolom dari spasi tidak sengaja
         df_db.columns = df_db.columns.str.strip()
         
         return df_db
@@ -42,7 +44,7 @@ def muat_database(url_input):
         st.error(f"⚠️ Gagal menghubungkan ke Database Google Sheets: {e}")
         return pd.DataFrame(columns=['ID', 'Tujuan Pengiriman', 'Nama PIC'])
 
-# Memuat data ke memori komputer PC 1
+# Memuat data dari cloud database Google Sheets
 df_database = muat_database(URL_SHEET)
 
 st.subheader("📝 Tabel Input Data")
@@ -76,8 +78,8 @@ for idx, row in df_edit.iterrows():
             pencarian = df_database[df_database['ID'].astype(str).str.strip() == id_inputan]
             
             if not pencarian.empty:
-                tujuan_terdeteksi = str(pencarian.iloc[0]['Tujuan Pengiriman']) if 'Tujuan Pengiriman' in df_database.columns else "KOLOM TUJUAN TIDAK ADA"
-                pic_terdeteksi = str(pencarian.iloc[0]['Nama PIC']) if 'Nama PIC' in df_database.columns else "KOLOM PIC TIDAK ADA"
+                tujuan_terdeteksi = str(pencarian.iloc['Tujuan Pengiriman']) if 'Tujuan Pengiriman' in df_database.columns else "KOLOM TUJUAN TIDAK ADA"
+                pic_terdeteksi = str(pencarian.iloc['Nama PIC']) if 'Nama PIC' in df_database.columns else "KOLOM PIC TIDAK ADA"
             else:
                 tujuan_terdeteksi = "ID TIDAK DITEMUKAN"
                 pic_terdeteksi = "TIDAK DIKETAHUI"
