@@ -11,7 +11,6 @@ st.write("Sistem terintegrasi database Google Sheets (Header Baris 2).")
 
 # =========================================================================
 # ⚠️ PASTE LINK GOOGLE SHEETS ANDA YANG SUDAH JADI 'ANYONE WITH THE LINK' DI SINI
-URL_SHEET = "# Ganti baris nomor 14 di app.py Anda menjadi kode ID bersih seperti ini:
 URL_SHEET = "https://google.com"
 # =========================================================================
 
