@@ -31,17 +31,15 @@ def muat_database(url_input):
         csv_url = f"https://google.com{sheet_id}/gviz/tq?tqx=out:csv&sheet={nama_sheet_aman}"
         
         # skiprows=3 digunakan untuk melompati baris 1, 2, dan 3.
-        # Sehingga Baris 4 otomatis naik menjadi Judul Kolom (Header) resmi bagi Python
         df_db = pd.read_csv(csv_url, skiprows=3)
         
-        # Karena Baris 5 adalah bagian dari Merge Cell, Python akan membacanya sebagai baris data pertama.
-        # Kita harus menghapus baris pertama index ke-0 ini agar data asli di Baris 6 tidak bergeser.
-        if not df_db.empty:
-            df_db = df_db.drop(df_db.index[0]).reset_index(drop=True)
-            
         # Bersihkan nama kolom dari spasi tidak sengaja di awal/akhir kata
         df_db.columns = df_db.columns.str.strip()
         
+        # Membuang baris sisa merge (baris 5) agar baris 6 naik jadi data pertama
+        if not df_db.empty:
+            df_db = df_db.iloc[1:].reset_index(drop=True)
+            
         return df_db
     except Exception as e:
         st.error(f"⚠️ Gagal menghubungkan ke Database Google Sheets: {e}")
@@ -68,7 +66,7 @@ df_edit = st.data_editor(
         "Masukkan ID": st.column_config.TextColumn("Masukkan ID", required=True),
         "Jumlah Box": st.column_config.NumberColumn("Jumlah Box", min_value=1, default=1, required=True),
         "Tujuan Pengiriman": st.column_config.TextColumn("Tujuan Pengiriman", disabled=True),
-        "Operator PIC": st.column_config.TextColumn("Nama PIC (Database)", disabled=True) # Hanya tampil di web
+        "Operator PIC": st.column_config.TextColumn("Nama PIC (Database)", disabled=True)
     }
 )
 
@@ -106,7 +104,9 @@ if diubah:
 
 # TOMBOL UTAMA UNTUK PROSES CETAK
 if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
-    if df_edit.empty or df_edit['Masukkan ID'].isna().all() or df_edit['Masukkan ID'].eq('').all():
+    df = pd.DataFrame(df_edit)
+    
+    if df.empty or df['Masukkan ID'].isna().all() or df['Masukkan ID'].eq('').all():
         st.error("Silakan isi data ID pada tabel terlebih dahulu!")
     else:
         try:
@@ -169,7 +169,7 @@ if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
                 
                 ada_data_valid = False
                 
-                for index, row in df_edit.iterrows():
+                for index, row in df.iterrows():
                     if pd.isna(row['Masukkan ID']) or str(row['Masukkan ID']).strip() == "":
                         continue
                         
@@ -223,5 +223,5 @@ if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
                 else:
                     st.warning("Tidak ada data valid yang bisa dicetak. Pastikan ID terdaftar di Google Sheets.")
                     
-except Exception as e:
-            st.error(f"⚠️ Terjadi kesalahan teknis: {e}")
+        except Exception as e:
+            st.error(f"⚠️ Terjadi kesalahan teknis saat memproses cetak: {e}")
