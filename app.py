@@ -4,7 +4,6 @@ import qrcode
 import io
 import base64
 import streamlit.components.v1 as components
-import urllib.parse
 import re
 
 st.set_page_config(page_title="Generator QR Code Massal", layout="centered")
@@ -12,27 +11,40 @@ st.title("📦 Sistem Input & Cetak QR Code Otomatis")
 st.write("Tujuan Pengiriman & Nama PIC (Operator) akan terisi otomatis di dalam tabel saat ID Unik diisi.")
 
 # =========================================================================
-# ⚠️ TENTUKAN LINK GOOGLE SHEETS ANDA SECARA BENAR DI SINI
+# ⚠️ PASTIKAN LINK GOOGLE SHEETS ANDA BENAR (ANYONE WITH THE LINK AS VIEWER)
 URL_SHEET = "https://google.com"
 # =========================================================================
 
-# Fungsi membaca database Google Sheets khusus untuk Sheet "Master 2026"
+# Fungsi membaca database Google Sheets khusus untuk Sheet "Master 2026" (Metode Jalur Ringan CSV)
 @st.cache_data(ttl=5) # Data disegarkan otomatis setiap 5 detik
 def muat_database(url_input):
     try:
         url_str = str(url_input).strip()
+        
+        # Ekstrak ID unik Google Sheets menggunakan Regex aman
         match = re.search(r"/d/([a-zA-Z0-9-_]+)", url_str)
         if match:
             sheet_id = match.group(1)
         else:
             sheet_id = url_str
             
-        nama_sheet_aman = urllib.parse.quote("Master 2026")
-        csv_url = f"https://google.com{sheet_id}/gviz/tq?tqx=out:csv&sheet={nama_sheet_aman}"
+        # NAMA SHEET TARGET: Ganti spasi menjadi tanda tambah (+) agar aman di jalur URL internet
+        nama_sheet_aman = "Master+2026"
         
-        # skiprows=1 agar Baris 2 menjadi Header resmi (ID, Tujuan Pengiriman, Nama PIC)
-        df_db = pd.read_csv(csv_url, skiprows=1)
+        # JALUR EKSPOR CSV RESMI (Jauh lebih ringan untuk Spreadsheet hasil IMPORTRANGE)
+        csv_url = f"https://google.com{sheet_id}/pub?output=csv&gid=0"
+        
+        # Jika Anda tahu GID (ID angka unik Sheet Master 2026 di ujung link browser saat dibuka), 
+        # ganti angka 0 di atas dengan GID tersebut (Misal: gid=1234567). Jika tidak tahu, biarkan gid=0.
+        # Namun, jalur di bawah ini adalah alternatif paling umum jika menggunakan format ekspor default:
+        csv_url_alt = f"https://google.com{sheet_id}/export?format=csv&sheet={nama_sheet_aman}"
+        
+        # Eksekusi penarikan data (skiprows=1 agar Baris 2 menjadi Header: ID, Tujuan Pengiriman, Nama PIC)
+        df_db = pd.read_csv(csv_url_alt, skiprows=1)
+        
+        # Bersihkan nama kolom dari spasi tidak sengaja di awal/akhir kata
         df_db.columns = df_db.columns.str.strip()
+        
         return df_db
     except Exception as e:
         st.error(f"⚠️ Gagal menghubungkan ke Database Google Sheets: {e}")
