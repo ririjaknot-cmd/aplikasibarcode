@@ -223,4 +223,3 @@ if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
                 if ada_data_valid:
                     components.html(html_konten, height=0, width=0)
                     st.balloons()
-                else:
