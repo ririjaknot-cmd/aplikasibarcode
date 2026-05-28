@@ -11,7 +11,7 @@ st.write("Sistem terintegrasi database Google Sheets (Header Baris 2).")
 
 # =========================================================================
 # ⚠️ PASTE LINK GOOGLE SHEETS ANDA YANG SUDAH JADI 'ANYONE WITH THE LINK' DI SINI
-URL_SHEET = "https://docs.google.com/spreadsheets/d/1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4/edit?usp=sharing"
+URL_SHEET = "https://docs.google.com/spreadsheets/d/1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4"
 # =========================================================================
 
 # Fungsi membaca database Google Sheets secara real-time
