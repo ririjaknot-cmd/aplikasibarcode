@@ -15,36 +15,38 @@ st.write("Sistem terintegrasi database Google Sheets (Sheet: Master 2026 | Heade
 URL_SHEET = "https://google.com"
 # =========================================================================
 
-# Fungsi membaca database Google Sheets khusus untuk Sheet "Master 2026"
-@st.cache_data(ttl=5) # Data disegarkan otomatis setiap 5 detik
+import urllib.parse
+import re
+
+# Fungsi membaca database Google Sheets khusus untuk Sheet "Master 2026" (Anti-Karakter Spasi)
+@st.cache_data(ttl=5)
 def muat_database(url_input):
     try:
         url_str = str(url_input).strip()
         
-        # MENGGUNAKAN REGEX (Sistem Ekstraksi Pintar Resmi)
-        # Menemukan ID Google Sheets secara otomatis di dalam teks link tanpa metode split manual
+        # Ekstrak ID Spreadsheet menggunakan ekspresi reguler (Regex)
         match = re.search(r"/d/([a-zA-Z0-9-_]+)", url_str)
         if match:
             sheet_id = match.group(1)
         else:
             sheet_id = url_str
             
-        nama_sheet_aman = "Master 2026"
+        # Mengubah nama sheet secara aman ke dalam format URL (mengubah spasi menjadi %20)
+        nama_sheet_aman = urllib.parse.quote("Master 2026")
         
-        # Membuat tautan ekspor CSV resmi dari Google API
+        # Menyusun link API Google resmi yang bersih
         csv_url = f"https://google.com{sheet_id}/gviz/tq?tqx=out:csv&sheet={nama_sheet_aman}"
         
-        # skiprows=1 untuk melompati Baris 1 agar Baris 2 otomatis naik menjadi Judul Kolom (ID, Tujuan Pengiriman, Nama PIC)
+        # skiprows=1 untuk melompati Baris 1 agar Baris 2 menjadi Header (ID, Tujuan Pengiriman, Nama PIC)
         df_db = pd.read_csv(csv_url, skiprows=1)
         
-        # Bersihkan nama kolom dari spasi tidak sengaja di awal/akhir kata
+        # Bersihkan nama kolom dari spasi tidak sengaja
         df_db.columns = df_db.columns.str.strip()
         
         return df_db
     except Exception as e:
         st.error(f"⚠️ Gagal menghubungkan ke Database Google Sheets: {e}")
         return pd.DataFrame(columns=['ID', 'Tujuan Pengiriman', 'Nama PIC'])
-
 # Memuat data dari cloud database
 df_database = muat_database(URL_SHEET)
 
