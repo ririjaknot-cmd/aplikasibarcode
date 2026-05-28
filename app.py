@@ -15,7 +15,7 @@ st.write("Tujuan Pengiriman & Nama PIC (Operator) akan terisi otomatis di dalam 
 URL_SHEET = "1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4"
 # =========================================================================
 
-# Fungsi membaca database Google Sheets khusus untuk Sheet "Master 2026" (Metode Jalur Ringan CSV)
+# Fungsi membaca database Google Sheets khusus untuk Sheet "Master 2026"
 @st.cache_data(ttl=5) # Data disegarkan otomatis setiap 5 detik
 def muat_database(url_input):
     try:
@@ -28,21 +28,16 @@ def muat_database(url_input):
         else:
             sheet_id = url_str
             
-        # NAMA SHEET TARGET: Ganti spasi menjadi tanda tambah (+) agar aman di jalur URL internet
+        # NAMA SHEET TARGET
         nama_sheet_aman = "Master+2026"
         
-        # JALUR EKSPOR CSV RESMI (Jauh lebih ringan untuk Spreadsheet hasil IMPORTRANGE)
-        csv_url = f"https://google.com{sheet_id}/pub?output=csv&gid=0"
-        
-        # Jika Anda tahu GID (ID angka unik Sheet Master 2026 di ujung link browser saat dibuka), 
-        # ganti angka 0 di atas dengan GID tersebut (Misal: gid=1234567). Jika tidak tahu, biarkan gid=0.
-        # Namun, jalur di bawah ini adalah alternatif paling umum jika menggunakan format ekspor default:
+        # PERBAIKAN UTAMA: Jalur URL Ekspor CSV Google Sheets yang benar
         csv_url_alt = f"https://google.com{sheet_id}/export?format=csv&sheet={nama_sheet_aman}"
         
-        # Eksekusi penarikan data (skiprows=1 agar Baris 2 menjadi Header: ID, Tujuan Pengiriman, Nama PIC)
+        # Eksekusi penarikan data (skiprows=1 agar Baris 2 menjadi Header)
         df_db = pd.read_csv(csv_url_alt, skiprows=1)
         
-        # Bersihkan nama kolom dari spasi tidak sengaja di awal/akhir kata
+        # Bersihkan nama kolom dari spasi tidak sengaja
         df_db.columns = df_db.columns.str.strip()
         
         return df_db
@@ -56,7 +51,7 @@ df_database = muat_database(URL_SHEET)
 st.subheader("📝 Tabel Input Data")
 st.caption("Tips: Isi kolom 'Masukkan ID' dan tekan Enter, maka kolom Tujuan dan Operator PIC akan otomatis terisi.")
 
-# Menggunakan session state agar data inputan di tabel tidak hilang saat halaman memproses ulang data
+# Menggunakan session state agar data inputan di tabel tidak hilang
 if 'tabel_data' not in st.session_state:
     st.session_state.tabel_data = pd.DataFrame([
         {"Masukkan ID": "", "Jumlah Box": 1, "Tujuan Pengiriman": "", "Operator PIC": ""}
@@ -72,16 +67,19 @@ df_edit = st.data_editor(
         "Jumlah Box": st.column_config.NumberColumn("Jumlah Box", min_value=1, default=1, required=True),
         "Tujuan Pengiriman": st.column_config.TextColumn("Tujuan Pengiriman", disabled=True),
         "Operator PIC": st.column_config.TextColumn("Operator PIC", disabled=True)
-    }
+    },
+    key="editor_utama"
 )
 
-# LOGIKA OTOMATISASI: Jalankan pencarian real-time setiap ada perubahan baris atau ID yang diinput
+# LOGIKA OTOMATISASI: Memproses perubahan data tanpa memicu Infinite Loop
 diubah = False
-for idx, row in df_edit.iterrows():
+df_proses = df_edit.copy()
+
+for idx, row in df_proses.iterrows():
     id_inputan = str(row["Masukkan ID"]).strip()
     
-    if id_inputan != "":
-        # Cari di database Google Sheets berdasarkan kolom 'ID' (A2)
+    if id_inputan != "" and id_inputan != "None" and not pd.isna(row["Masukkan ID"]):
+        # Cari di database Google Sheets berdasarkan kolom 'ID'
         pencarian = df_database[df_database['ID'].astype(str).str.strip() == id_inputan]
         
         if not pencarian.empty:
@@ -91,26 +89,26 @@ for idx, row in df_edit.iterrows():
             tujuan_terdeteksi = "ID TIDAK DITEMUKAN"
             pic_terdeteksi = "TIDAK DIKETAHUI"
             
-        # Jika data di tabel berbeda dengan hasil pencarian, perbarui isi tabelnya langsung
-        if df_edit.at[idx, "Tujuan Pengiriman"] != tujuan_terdeteksi or df_edit.at[idx, "Operator PIC"] != pic_terdeteksi:
-            df_edit.at[idx, "Tujuan Pengiriman"] = tujuan_terdeteksi
-            df_edit.at[idx, "Operator PIC"] = pic_terdeteksi
+        # Perbarui isi dataframe sementara jika ada perbedaan data
+        if row["Tujuan Pengiriman"] != tujuan_terdeteksi or row["Operator PIC"] != pic_terdeteksi:
+            df_proses.at[idx, "Tujuan Pengiriman"] = tujuan_terdeteksi
+            df_proses.at[idx, "Operator PIC"] = pic_terdeteksi
             diubah = True
 
-# Jika ada perubahan pemicu otomatisasi, simpan kembali ke memori halaman web
+# Jika ada perubahan pemicu otomatisasi, simpan ke session state dan refresh sekali saja
 if diubah:
-    st.session_state.tabel_data = df_edit
+    st.session_state.tabel_data = df_proses
     st.rerun()
 
 # TOMBOL UTAMA UNTUK PROSES CETAK
 if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
-    if df_edit.empty or df_edit['Masukkan ID'].isna().all() or df_edit['Masukkan ID'].eq('').all():
+    if df_proses.empty or df_proses['Masukkan ID'].isna().all() or df_proses['Masukkan ID'].eq('').all():
         st.error("Silakan isi data ID pada tabel terlebih dahulu!")
     else:
         try:
             with st.spinner("Menyiapkan lembar cetak QR Code..."):
                 
-                # Desain layout kertas cetak (HTML + CSS) bersih 3 kolom tanpa tulisan Nama Operator PIC
+                # Desain layout kertas cetak (HTML + CSS) bersih 3 kolom
                 html_konten = """
                 <html>
                 <head>
@@ -146,7 +144,7 @@ if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
                 
                 ada_data_valid = False
                 
-                for index, row in df_edit.iterrows():
+                for index, row in df_proses.iterrows():
                     if pd.isna(row['Masukkan ID']) or str(row['Masukkan ID']).strip() == "":
                         continue
                         
@@ -169,13 +167,13 @@ if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
                             
                             img_base64 = base64.b64encode(fp.read()).decode('utf-8')
                             
-                            # Tampilan Kertas Label Cetak (Hanya ID, Box, dan Tujuan - Operator PIC bersih tidak ikut tercetak)
+                            # Tampilan Kertas Label Cetak (Perbaikan tag penutup HTML)
                             html_konten += f"""
                             <div class="kotak-label">
                                 <img src="data:image/png;base64,{img_base64}" />
                                 <div class="info-teks">
                                     <b>ID:</b> {id_inputan}<br/>
-                                    <b>Box:</b> {b}/{jumlah_box}<br/>
+                                    <b>Box:</b> {b} dari {jumlah_box}<br/>
                                     <b>Tujuan:</b> {tujuan}
                                 </div>
                             </div>
@@ -184,20 +182,17 @@ if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
                 html_konten += """
                 </div>
                 <script>
-                    window.onload = function() {
-                        window.print(); /* Otomatis memicu jendela cetak printer hardware */
-                    }
+                    window.onload = function() { window.print(); }
                 </script>
                 </body>
                 </html>
                 """
                 
                 if ada_data_valid:
-                    # Jalankan perintah cetak langsung ke hardware printer browser
-                    components.html(html_konten, height=0, width=0)
-                    st.balloons()
+                    # Menampilkan jendela cetak print otomatis menggunakan iframe tersembunyi
+                    components.html(html_konten, height=600, scrolling=True)
                 else:
-                    st.warning("Tidak ada data valid yang bisa dicetak. Pastikan ID Anda terdaftar di Google Sheets.")
+                    st.warning("⚠️ Tidak ada ID valid yang siap dicetak. Pastikan status bukan 'ID TIDAK DITEMUKAN'.")
                     
         except Exception as e:
-            st.error(f"⚠️ Terjadi kesalahan teknis: {e}")
+            st.error(f"Gagal memproses cetak: {e}")
