@@ -12,7 +12,7 @@ st.title("📦 Sistem Input & Cetak QR Code Otomatis")
 st.write("Tujuan Pengiriman & Nama PIC (Operator) akan terisi otomatis di dalam tabel saat ID Unik diisi.")
 
 # Link langsung ke file Google Sheets Anda (Menggunakan tab pertama)
-URL_EKSPOR_LANGSUNG = "https://google.com"
+URL_EKSPOR_LANGSUNG = "https://docs.google.com/spreadsheets/d/1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4/edit?usp=sharing"
 
 # Membaca database secara langsung tanpa cache agar data selalu aktual
 def muat_database():
