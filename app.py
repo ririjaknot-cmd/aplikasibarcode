@@ -12,7 +12,7 @@ st.title("📦 QR Barcode ID Cabang 2026")
 
 # Tautan langsung ke Google Sheets Anda
 ID_SHEETS_BARU = "1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4"
-URL_EKSPOR_LANGSUNG = f"https://google.com{ID_SHEETS_BARU}/export?format=csv"
+URL_EKSPOR_LANGSUNG = f"https://docs.google.com/spreadsheets/d/{ID_SHEETS_BARU}/export?format=csv"
 
 def muat_database():
     try:
@@ -53,20 +53,20 @@ df_database = muat_database()
 # TAMPILAN FORMULIR INPUT VERTIKAL (MENURUN)
 # =========================================================================
 st.subheader("📝 Formulir Input ID")
-st.caption("Tips: Masukkan ID, tekan Tab/Enter untuk turun ke Jumlah Box, lalu tekan Enter sekali lagi untuk Validasi.")
+st.caption("Tips: Masukkan ID, tekan Tab untuk pindah ke Jumlah Box, lalu tekan Enter.")
 
-# PERBAIKAN: Input ID diletakkan di luar form agar Enter TIDAK BISA memicu tombol submit di bawah
-id_inputan = st.text_input("Masukkan ID", value="").strip().replace('.0', '')
-
-# Form hanya mengunci Jumlah Box dan tombol eksekusi utama
-with st.form(key="form_kontrol_validasi"):
-    # Input Jumlah Box (Kondisi Awal Kosong)
+# Form dibuat vertikal menurun ke bawah
+with st.form(key="form_vertikal_shipment"):
+    # 1. Baris Pertama: Input ID
+    id_inputan = st.text_input("Masukkan ID", value="").strip().replace('.0', '')
+    
+    # 2. Baris Kedua: Input Jumlah Box (DIUBAH AGAR DI AWAL KOSONG)
     jumlah_box = st.number_input("Jumlah Box", min_value=1, value=None, step=1)
     
-    # Tombol submit form (Satu-satunya gerbang utama untuk memicu pencarian data)
+    # Tombol submit form (Memproses data ke layar tanpa langsung memicu print)
     proses_button = st.form_submit_button(label="🔍 Cek & Validasi Data", type="primary", use_container_width=True)
 
-# Logika pemrosesan setelah tombol ditekan atau pengguna menekan Enter di kolom Jumlah Box
+# Logika pemrosesan setelah tombol ditekan atau pengguna menekan Enter
 if proses_button:
     if id_inputan == "":
         st.error("Silakan isi data ID terlebih dahulu!")
