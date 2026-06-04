@@ -53,7 +53,7 @@ df_database = muat_database()
 # TAMPILAN FORMULIR INPUT VERTIKAL (MENURUN)
 # =========================================================================
 st.subheader("📝 Formulir Input ID")
-st.caption("Tips: Masukkan ID (bisa gunakan scanner), tekan Tab untuk pindah ke Jumlah Box, lalu tekan Enter.")
+st.caption("Tips: Masukkan ID, tekan Tab untuk pindah ke Jumlah Box, lalu tekan Enter.")
 
 # Form dibuat vertikal menurun ke bawah
 with st.form(key="form_vertikal_shipment"):
@@ -63,15 +63,15 @@ with st.form(key="form_vertikal_shipment"):
     # 2. Baris Kedua: Input Jumlah Box
     jumlah_box = st.number_input("Jumlah Box", min_value=1, value=1, step=1)
     
-    # Tombol submit form (Atau otomatis terpicu saat tekan Enter di keyboard)
-    proses_button = st.form_submit_button(label="🔍 Proses & Cetak QR Code", type="primary")
+    # Tombol submit form (Memproses data ke layar tanpa langsung memicu print)
+    proses_button = st.form_submit_button(label="🔍 Cek & Validasi Data", type="primary", use_container_width=True)
 
 # Logika pemrosesan setelah tombol ditekan atau pengguna menekan Enter
 if proses_button:
     if id_inputan == "":
         st.error("Silakan isi data ID terlebih dahulu!")
     else:
-        with st.spinner("Mencari data dan menyiapkan lembar cetak..."):
+        with st.spinner("Mencari data ke database..."):
             # Sinkronisasi format tipe data ID agar pencarian akurat
             df_database['ID_STR'] = df_database['ID'].astype(str).str.strip().str.replace('.0', '', regex=False)
             pencarian = df_database[df_database['ID_STR'] == id_inputan]
@@ -80,34 +80,57 @@ if proses_button:
                 tujuan_terdeteksi = str(pencarian.iloc[0]['Tujuan Pengiriman']).strip()
                 pic_terdeteksi = str(pencarian.iloc[0]['Nama PIC']).strip()
                 
-                # Menampilkan Informasi Data yang Berhasil Ditemukan (Menurun kebawah)
-                st.success("✅ Data Berhasil Ditemukan!")
+                # Menampilkan Informasi Data Secara Vertikal untuk dibaca pengguna
+                st.success("✅ Data Berhasil Ditemukan! Silakan baca data sebelum mencetak.")
                 
-                # Menggunakan layout container agar informasi tersusun vertikal dengan rapi
                 st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
                 st.info(f"**👤 Nama PIC:** {pic_terdeteksi}")
                 
                 # =========================================================================
-                # PEMBUATAN DAN PENCETAKAN QR CODE OTOMATIS
+                # PEMBUATAN DOKUMEN PREVIEW & TOMBOL PRINT MANUAL
                 # =========================================================================
                 try:
+                    # KODE UTAMA: Desain HTML + Tombol Print Mandiri di dalam dokumen pratinjau
                     html_konten = """
                     <html>
                     <head>
                     <style>
                         body { font-family: Arial, sans-serif; margin: 10px; background: white; color: black; }
+                        .area-tombol { margin-bottom: 20px; text-align: center; }
+                        .tombol-print { 
+                            background-color: #FF4B4B; 
+                            color: white; 
+                            border: none; 
+                            padding: 12px 30px; 
+                            font-size: 16px; 
+                            font-weight: bold; 
+                            border-radius: 4px; 
+                            cursor: pointer; 
+                            width: 100%;
+                        }
+                        .tombol-print:hover { background-color: #D32F2F; }
                         .grid-kontainer { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
                         .kotak-label { border: 1px solid #CCCCCC; padding: 10px; text-align: center; border-radius: 4px; page-break-inside: avoid; }
                         .info-teks { font-size: 11px; text-align: left; margin-top: 5px; line-height: 14px; }
                         img { width: 100px; height: 100px; }
-                        @media print { .no-print { display: none !important; } }
+                        
+                        /* Menyembunyikan tombol cetak saat kertas printer sedang mencetak */
+                        @media print { 
+                            .no-print { display: none !important; } 
+                        }
                     </style>
                     </head>
                     <body>
+                    
+                    <!-- PERBAIKAN UTAMA: Tombol cetak manual diletakkan di dalam halaman pratinjau -->
+                    <div class="area-tombol no-print">
+                        <button class="tombol-print" onclick="window.print()">🖨️ KLIK DI SINI UNTUK CETAK SEKARANG</button>
+                    </div>
+                    
                     <div class="grid-kontainer">
                     """
                     
-                    # Looping pembuatan QR Code berdasarkan jumlah box yang dimasukkan
+                    # Looping pembuatan QR Code berdasarkan jumlah box
                     for b in range(1, int(jumlah_box) + 1):
                         qr = qrcode.QRCode(version=1, box_size=10, border=1)
                         qr.add_data(id_inputan)
@@ -131,19 +154,19 @@ if proses_button:
                         </div>
                         """
                     
+                    # PERBAIKAN UTAMA: Menghapus window.print() otomatis saat halaman dimuat
                     html_konten += """
                     </div>
-                    <script>window.onload = function() { window.print(); }</script>
                     </body>
                     </html>
                     """
                     
                     st.subheader("🖨️ Pratinjau Lembar Cetak")
-                    st.caption("Dialog printer cetak otomatis akan langsung terbuka di peramban Anda.")
-                    components.html(html_konten, height=400, scrolling=True)
+                    st.caption("Tinjau QR Code di bawah ini. Klik tombol merah di dalam kotak pratinjau untuk mencetak.")
+                    components.html(html_konten, height=450, scrolling=True)
                     
                 except Exception as err:
-                    st.error(f"Gagal memproses cetak: {err}")
+                    st.error(f"Gagal memproses pratinjau cetak: {err}")
             else:
                 # Kondisi jika ID yang dicari tidak ada di database Google Sheets
                 st.error(f"❌ ID '{id_inputan}' TIDAK DITEMUKAN di dalam Database Google Sheets!")
