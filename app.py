@@ -10,7 +10,7 @@ from io import StringIO
 st.set_page_config(page_title="Shipment Cabang", layout="centered")
 st.title("📦 QR Barcode ID Cabang 2026")
 
-# PERBAIKAN: Menggunakan ID Dokumen Asli berdasarkan Log Anda
+# Tautan langsung ke Google Sheets Anda
 ID_SHEETS_BARU = "1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4"
 URL_EKSPOR_LANGSUNG = f"https://docs.google.com/spreadsheets/d/{ID_SHEETS_BARU}/export?format=csv"
 
@@ -49,122 +49,101 @@ def muat_database():
 # Jalankan fungsi muat data
 df_database = muat_database()
 
-st.subheader("📝 Tabel Input ID")
-st.caption("Tips: Isi kolom 'Masukkan ID' dan tekan Enter, maka kolom Tujuan dan Nama PIC akan otomatis terisi.")
+# =========================================================================
+# TAMPILAN FORMULIR INPUT VERTIKAL (MENURUN)
+# =========================================================================
+st.subheader("📝 Formulir Input ID")
+st.caption("Tips: Masukkan ID (bisa gunakan scanner), tekan Tab untuk pindah ke Jumlah Box, lalu tekan Enter.")
 
-if 'tabel_data' not in st.session_state:
-    st.session_state.tabel_data = pd.DataFrame([
-        {"Masukkan ID": "", "Jumlah Box": 1, "Tujuan Pengiriman": "", "Nama PIC": ""}
-    ])
-
-df_edit = st.data_editor(
-    st.session_state.tabel_data, 
-    num_rows="dynamic", 
-    use_container_width=True,
-    column_config={
-        "Masukkan ID": st.column_config.TextColumn("Masukkan ID", required=True),
-        "Jumlah Box": st.column_config.NumberColumn("Jumlah Box", min_value=1, default=1, required=True),
-        "Tujuan Pengiriman": st.column_config.TextColumn("Tujuan Pengiriman", disabled=True),
-        "Nama PIC": st.column_config.TextColumn("Nama PIC", disabled=True)
-    },
-    key="editor_utama"
-)
-
-diubah = False
-df_proses = df_edit.copy()
-
-for idx, row in df_proses.iterrows():
-    # PERBAIKAN: Menghapus parameter 'regex=False' karena ini fungsi string biasa
-    id_inputan = str(row["Masukkan ID"]).strip().replace('.0', '')
+# Form dibuat vertikal menurun ke bawah
+with st.form(key="form_vertikal_shipment"):
+    # 1. Baris Pertama: Input ID
+    id_inputan = st.text_input("Masukkan ID", value="").strip().replace('.0', '')
     
-    if id_inputan != "" and id_inputan != "None" and not pd.isna(row["Masukkan ID"]):
-        # Pastikan data ID di database dibersihkan dengan cara yang sama
-        df_database['ID_STR'] = df_database['ID'].astype(str).str.strip().str.replace('.0', '', regex=False)
-        pencarian = df_database[df_database['ID_STR'] == id_inputan]
-        
-        if not pencarian.empty:
-            # PERBAIKAN FATAL: Menggunakan .iloc[0] untuk mengambil baris pertama hasil pencarian
-            tujuan_terdeteksi = str(pencarian.iloc[0]['Tujuan Pengiriman']).strip()
-            pic_terdeteksi = str(pencarian.iloc[0]['Nama PIC']).strip()
-        else:
-            tujuan_terdeteksi = "ID TIDAK DITEMUKAN"
-            pic_terdeteksi = "TIDAK DIKETAHUI"
-            
-        if str(row["Tujuan Pengiriman"]).strip() != tujuan_terdeteksi or str(row["Nama PIC"]).strip() != pic_terdeteksi:
-            df_proses.at[idx, "Tujuan Pengiriman"] = tujuan_terdeteksi
-            df_proses.at[idx, "Nama PIC"] = pic_terdeteksi
-            diubah = True
+    # 2. Baris Kedua: Input Jumlah Box
+    jumlah_box = st.number_input("Jumlah Box", min_value=1, value=1, step=1)
+    
+    # Tombol submit form (Atau otomatis terpicu saat tekan Enter di keyboard)
+    proses_button = st.form_submit_button(label="🔍 Proses & Cetak QR Code", type="primary")
 
-if diubah:
-    st.session_state.tabel_data = df_proses
-    st.rerun()
-
-if st.button("🖨️ Cetak QR Code", type="primary"):
-    if df_proses.empty or df_proses['Masukkan ID'].isna().all() or df_proses['Masukkan ID'].eq('').all():
-        st.error("Silakan isi data ID pada tabel terlebih dahulu!")
+# Logika pemrosesan setelah tombol ditekan atau pengguna menekan Enter
+if proses_button:
+    if id_inputan == "":
+        st.error("Silakan isi data ID terlebih dahulu!")
     else:
-        try:
-            with st.spinner("Menyiapkan lembar cetak QR Code..."):
-                html_konten = """
-                <html>
-                <head>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 10px; background: white; color: black; }
-                    .grid-kontainer { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-                    .kotak-label { border: 1px solid #CCCCCC; padding: 10px; text-align: center; border-radius: 4px; page-break-inside: avoid; }
-                    .info-teks { font-size: 11px; text-align: left; margin-top: 5px; line-height: 14px; }
-                    img { width: 100px; height: 100px; }
-                    @media print { .no-print { display: none !important; } }
-                </style>
-                </head>
-                <body>
-                <div class="grid-kontainer">
-                """
-                ada_data_valid = False
+        with st.spinner("Mencari data dan menyiapkan lembar cetak..."):
+            # Sinkronisasi format tipe data ID agar pencarian akurat
+            df_database['ID_STR'] = df_database['ID'].astype(str).str.strip().str.replace('.0', '', regex=False)
+            pencarian = df_database[df_database['ID_STR'] == id_inputan]
+            
+            if not pencarian.empty:
+                tujuan_terdeteksi = str(pencarian.iloc[0]['Tujuan Pengiriman']).strip()
+                pic_terdeteksi = str(pencarian.iloc[0]['Nama PIC']).strip()
                 
-                for index, row in df_proses.iterrows():
-                    if pd.isna(row['Masukkan ID']) or str(row['Masukkan ID']).strip() == "":
-                        continue
-                        
-                    id_inputan = str(row['Masukkan ID']).strip()
-                    jumlah_box = int(row['Jumlah Box']) if not pd.isna(row['Jumlah Box']) else 1
-                    tujuan = str(row['Tujuan Pengiriman'])
+                # Menampilkan Informasi Data yang Berhasil Ditemukan (Menurun kebawah)
+                st.success("✅ Data Berhasil Ditemukan!")
+                
+                # Menggunakan layout container agar informasi tersusun vertikal dengan rapi
+                st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
+                st.info(f"**👤 Nama PIC:** {pic_terdeteksi}")
+                
+                # =========================================================================
+                # PEMBUATAN DAN PENCETAKAN QR CODE OTOMATIS
+                # =========================================================================
+                try:
+                    html_konten = """
+                    <html>
+                    <head>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 10px; background: white; color: black; }
+                        .grid-kontainer { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+                        .kotak-label { border: 1px solid #CCCCCC; padding: 10px; text-align: center; border-radius: 4px; page-break-inside: avoid; }
+                        .info-teks { font-size: 11px; text-align: left; margin-top: 5px; line-height: 14px; }
+                        img { width: 100px; height: 100px; }
+                        @media print { .no-print { display: none !important; } }
+                    </style>
+                    </head>
+                    <body>
+                    <div class="grid-kontainer">
+                    """
                     
-                    if tujuan != "ID TIDAK DITEMUKAN" and tujuan != "":
-                        ada_data_valid = True
-                        for b in range(1, jumlah_box + 1):
-                            qr = qrcode.QRCode(version=1, box_size=10, border=1)
-                            qr.add_data(id_inputan)
-                            qr.make(fit=True)
-                            img_qr = qr.make_image(fill_color="black", back_color="white")
-                            
-                            fp = io.BytesIO()
-                            img_qr.save(fp, format="PNG")
-                            fp.seek(0)
-                            
-                            img_base64 = base64.b64encode(fp.read()).decode('utf-8')
-                            
-                            html_konten += f"""
-                            <div class="kotak-label">
-                                <img src="data:image/png;base64,{img_base64}" />
-                                <div class="info-teks">
-                                    <b>ID:</b> {id_inputan}<br/>
-                                    <b>Box:</b> {b} dari {jumlah_box}<br/>
-                                    <b>Tujuan:</b> {tujuan}
-                                </div>
+                    # Looping pembuatan QR Code berdasarkan jumlah box yang dimasukkan
+                    for b in range(1, int(jumlah_box) + 1):
+                        qr = qrcode.QRCode(version=1, box_size=10, border=1)
+                        qr.add_data(id_inputan)
+                        qr.make(fit=True)
+                        img_qr = qr.make_image(fill_color="black", back_color="white")
+                        
+                        fp = io.BytesIO()
+                        img_qr.save(fp, format="PNG")
+                        fp.seek(0)
+                        
+                        img_base64 = base64.b64encode(fp.read()).decode('utf-8')
+                        
+                        html_konten += f"""
+                        <div class="kotak-label">
+                            <img src="data:image/png;base64,{img_base64}" />
+                            <div class="info-teks">
+                                <b>ID:</b> {id_inputan}<br/>
+                                <b>Box:</b> {b} dari {jumlah_box}<br/>
+                                <b>Tujuan:</b> {tujuan_terdeteksi}
                             </div>
-                            """
-                
-                html_konten += """
-                </div>
-                <script>window.onload = function() { window.print(); }</script>
-                </body>
-                </html>
-                """
-                
-                if ada_data_valid:
-                    components.html(html_konten, height=600, scrolling=True)
-                else:
-                    st.warning("Tidak ada ID valid yang bisa dicetak.")
-        except Exception as err:
-            st.error(f"Gagal memproses cetak: {err}")
+                        </div>
+                        """
+                    
+                    html_konten += """
+                    </div>
+                    <script>window.onload = function() { window.print(); }</script>
+                    </body>
+                    </html>
+                    """
+                    
+                    st.subheader("🖨️ Pratinjau Lembar Cetak")
+                    st.caption("Dialog printer cetak otomatis akan langsung terbuka di peramban Anda.")
+                    components.html(html_konten, height=400, scrolling=True)
+                    
+                except Exception as err:
+                    st.error(f"Gagal memproses cetak: {err}")
+            else:
+                # Kondisi jika ID yang dicari tidak ada di database Google Sheets
+                st.error(f"❌ ID '{id_inputan}' TIDAK DITEMUKAN di dalam Database Google Sheets!")
