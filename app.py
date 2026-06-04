@@ -5,6 +5,9 @@ import io
 import base64
 import streamlit.components.v1 as components
 import re
+import requests       # 👈 TAMBAHKAN INI
+from io import StringIO # 👈 TAMBAHKAN INI
+
 
 st.set_page_config(page_title="Generator QR Code Massal", layout="centered")
 st.title("📦 Sistem Input & Cetak QR Code Otomatis")
@@ -31,10 +34,14 @@ def muat_database(url_input):
         nama_sheet_aman = "Master+2026"
         csv_url_alt = f"https://google.com{sheet_id}/export?format=csv&sheet={nama_sheet_aman}"
         
-        # 1. PERBAIKAN: Baca tanpa skip baris terlebih dahulu untuk deteksi dinamis
-        df_raw = pd.read_csv(csv_url_alt, header=None)
+        # PERBAIKAN UTAMA: Menggunakan requests dengan batas waktu 10 detik
+        respon = requests.get(csv_url_alt, timeout=10)
+        respon.raise_for_status() # Memastikan status HTTP 200 OK (Sukses)
         
-        # 2. Cari di baris mana kata "ID" atau "Tujuan Pengiriman" berada
+        # Mengubah teks CSV menjadi format yang bisa dibaca Pandas
+        df_raw = pd.read_csv(StringIO(respon.text), header=None)
+        
+        # Cari di baris mana kata "ID" atau "Tujuan Pengiriman" berada
         header_idx = 0
         for idx, row in df_raw.iterrows():
             row_str = row.astype(str).str.strip().tolist()
@@ -42,24 +49,24 @@ def muat_database(url_input):
                 header_idx = idx
                 break
                 
-        # 3. Baca ulang menggunakan baris header yang tepat hasil deteksi otomatis
-        df_db = pd.read_csv(csv_url_alt, skiprows=header_idx)
+        # Baca ulang teks CSV menggunakan baris header hasil deteksi otomatis
+        df_db = pd.read_csv(StringIO(respon.text), skiprows=header_idx)
         
         # Bersihkan nama kolom dari spasi tidak sengaja
         df_db.columns = df_db.columns.str.strip()
         
-        # 4. Validasi darurat jika kolom yang dibutuhkan tetap tidak ditemukan
+        # Validasi darurat jika kolom yang dibutuhkan tetap tidak ditemukan
         kolom_wajib = ['ID', 'Tujuan Pengiriman', 'Nama PIC']
         for col in kolom_wajib:
             if col not in df_db.columns:
-                # Jika tidak ketemu, buat kolom kosong agar aplikasi tidak langsung crash/galat
                 df_db[col] = ""
-                st.warning(f"⚠️ Kolom '{col}' tidak ditemukan di Google Sheets! Periksa nama kolom Anda.")
+                st.warning(f"⚠️ Kolom '{col}' tidak ditemukan di Google Sheets!")
                 
         return df_db
     except Exception as e:
         st.error(f"⚠️ Gagal menghubungkan ke Database Google Sheets: {e}")
         return pd.DataFrame(columns=['ID', 'Tujuan Pengiriman', 'Nama PIC'])
+
 
 # Memuat data dari cloud database
 df_database = muat_database(URL_SHEET)
