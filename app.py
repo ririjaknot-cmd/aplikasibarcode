@@ -4,44 +4,29 @@ import qrcode
 import io
 import base64
 import streamlit.components.v1 as components
-import re
-import requests       # 👈 TAMBAHKAN INI
-from io import StringIO # 👈 TAMBAHKAN INI
-
+import requests         # Pastikan ini ada
+from io import StringIO   # Pastikan ini ada
 
 st.set_page_config(page_title="Generator QR Code Massal", layout="centered")
 st.title("📦 Sistem Input & Cetak QR Code Otomatis")
 st.write("Tujuan Pengiriman & Nama PIC (Operator) akan terisi otomatis di dalam tabel saat ID Unik diisi.")
 
 # =========================================================================
-# ⚠️ PASTIKAN LINK GOOGLE SHEETS ANDA BENAR (ANYONE WITH THE LINK AS VIEWER)
-URL_SHEET = "https://docs.google.com/spreadsheets/d/1iTKZdSYb53w0c_YM651Y9iLDYSKimAyvWiI7LFVvwyc/edit?usp=sharing"
+# PERBAIKAN TOTAL: LANGSUNG GUNAKAN URL EKSPOR CSV YANG VALID DAN BENAR
 # =========================================================================
+URL_EKSPOR_LANGSUNG = "https://google.com"
 
-# Fungsi membaca database Google Sheets khusus untuk Sheet "Master 2026"
 @st.cache_data(ttl=5) # Data disegarkan otomatis setiap 5 detik
-def muat_database(url_input):
+def muat_database():
     try:
-        url_str = str(url_input).strip()
+        # Menarik data menggunakan requests dengan batas waktu 10 detik
+        respon = requests.get(URL_EKSPOR_LANGSUNG, timeout=10)
+        respon.raise_for_status() # Memastikan status HTTP 200 OK
         
-        # Ekstrak ID unik Google Sheets menggunakan Regex aman
-        match = re.search(r"/d/([a-zA-Z0-9-_]+)", url_str)
-        if match:
-            sheet_id = match.group(1)
-        else:
-            sheet_id = url_str
-            
-        nama_sheet_aman = "Master+2026"
-        csv_url_alt = f"https://google.com{sheet_id}/export?format=csv&sheet={nama_sheet_aman}"
-        
-        # PERBAIKAN UTAMA: Menggunakan requests dengan batas waktu 10 detik
-        respon = requests.get(csv_url_alt, timeout=10)
-        respon.raise_for_status() # Memastikan status HTTP 200 OK (Sukses)
-        
-        # Mengubah teks CSV menjadi format yang bisa dibaca Pandas
+        # Membaca teks mentah CSV tanpa memotong baris terlebih dahulu
         df_raw = pd.read_csv(StringIO(respon.text), header=None)
         
-        # Cari di baris mana kata "ID" atau "Tujuan Pengiriman" berada
+        # Cari di baris mana kata "ID" atau "Tujuan Pengiriman" berada (Deteksi Otomatis)
         header_idx = 0
         for idx, row in df_raw.iterrows():
             row_str = row.astype(str).str.strip().tolist()
@@ -49,13 +34,11 @@ def muat_database(url_input):
                 header_idx = idx
                 break
                 
-        # Baca ulang teks CSV menggunakan baris header hasil deteksi otomatis
+        # Baca ulang CSV dari baris header yang tepat
         df_db = pd.read_csv(StringIO(respon.text), skiprows=header_idx)
+        df_db.columns = df_db.columns.str.strip() # Bersihkan spasi kolom
         
-        # Bersihkan nama kolom dari spasi tidak sengaja
-        df_db.columns = df_db.columns.str.strip()
-        
-        # Validasi darurat jika kolom yang dibutuhkan tetap tidak ditemukan
+        # Validasi darurat jika kolom wajib hilang
         kolom_wajib = ['ID', 'Tujuan Pengiriman', 'Nama PIC']
         for col in kolom_wajib:
             if col not in df_db.columns:
@@ -67,9 +50,8 @@ def muat_database(url_input):
         st.error(f"⚠️ Gagal menghubungkan ke Database Google Sheets: {e}")
         return pd.DataFrame(columns=['ID', 'Tujuan Pengiriman', 'Nama PIC'])
 
-
-# Memuat data dari cloud database
-df_database = muat_database(URL_SHEET)
+# Memuat data dari cloud database (Sekarang tanpa memasukkan parameter URL)
+df_database = muat_database()
 
 st.subheader("📝 Tabel Input Data")
 st.caption("Tips: Isi kolom 'Masukkan ID' dan tekan Enter, maka kolom Tujuan dan Operator PIC akan otomatis terisi.")
