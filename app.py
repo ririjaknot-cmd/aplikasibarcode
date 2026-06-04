@@ -29,14 +29,17 @@ def muat_database():
         # Cari di baris mana kata "ID" atau "Tujuan Pengiriman" berada (Deteksi Otomatis)
         header_idx = 0
         for idx, row in df_raw.iterrows():
-            row_str = row.astype(str).str.strip().tolist()
+            # Bersihkan teks di setiap sel dari tanda kutip dan spasi untuk pencarian akurat
+            row_str = row.astype(str).str.replace('"', '').str.strip().tolist()
             if "ID" in row_str or "Tujuan Pengiriman" in row_str:
                 header_idx = idx
                 break
                 
         # Baca ulang CSV dari baris header yang tepat
         df_db = pd.read_csv(StringIO(respon.text), skiprows=header_idx)
-        df_db.columns = df_db.columns.str.strip() # Bersihkan spasi kolom
+        
+        # PERBAIKAN UTAMA: Bersihkan nama kolom dari tanda kutip, enter (\n), dan spasi liar
+        df_db.columns = df_db.columns.astype(str).str.replace('"', '').str.replace('\n', ' ').str.strip()
         
         # Validasi darurat jika kolom wajib hilang
         kolom_wajib = ['ID', 'Tujuan Pengiriman', 'Nama PIC']
