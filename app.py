@@ -31,8 +31,8 @@ def muat_database(url_input):
         # NAMA SHEET TARGET
         nama_sheet_aman = "Master+2026"
         
-        # PERBAIKAN UTAMA: Jalur URL Ekspor CSV Google Sheets yang benar
-        csv_url_alt = f"https://google.com{sheet_id}/export?format=csv&sheet={nama_sheet_aman}"
+        # PERBAIKAN UTAMA: Jalur URL Ekspor CSV Google Sheets yang benar dan valid
+        csv_url_alt = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&sheet={nama_sheet_aman}"
         
         # Eksekusi penarikan data (skiprows=1 agar Baris 2 menjadi Header)
         df_db = pd.read_csv(csv_url_alt, skiprows=1)
@@ -194,5 +194,5 @@ if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
                 else:
                     st.warning("⚠️ Tidak ada ID valid yang siap dicetak. Pastikan status bukan 'ID TIDAK DITEMUKAN'.")
                     
-        except Exception as e:
-            st.error(f"Gagal memproses cetak: {e}")
+        except Exception as err:
+            st.error(f"Gagal memproses cetak: {err}")
