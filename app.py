@@ -53,46 +53,18 @@ df_database = muat_database()
 # TAMPILAN FORMULIR INPUT VERTIKAL (MENURUN)
 # =========================================================================
 st.subheader("📝 Formulir Input ID")
-st.caption("Tips: Masukkan ID, tekan Tab atau Enter untuk pindah ke Jumlah Box. Setelah isi Jumlah Box, tekan Enter untuk Validasi.")
+st.caption("Tips: Masukkan ID, tekan Tab/Enter untuk turun ke Jumlah Box, lalu tekan Enter sekali lagi untuk Validasi.")
 
-# Form dibuat vertikal menurun ke bawah
-with st.form(key="form_vertikal_shipment"):
-    # 1. Baris Pertama: Input ID
-    id_inputan = st.text_input("Masukkan ID", value="").strip().replace('.0', '')
-    
-    # 2. Baris Kedua: Input Jumlah Box (Kondisi Awal Kosong)
+# PERBAIKAN: Input ID diletakkan di luar form agar Enter TIDAK BISA memicu tombol submit di bawah
+id_inputan = st.text_input("Masukkan ID", value="").strip().replace('.0', '')
+
+# Form hanya mengunci Jumlah Box dan tombol eksekusi utama
+with st.form(key="form_kontrol_validasi"):
+    # Input Jumlah Box (Kondisi Awal Kosong)
     jumlah_box = st.number_input("Jumlah Box", min_value=1, value=None, step=1)
     
-    # Tombol submit form (Memproses data ke layar tanpa langsung memicu print)
+    # Tombol submit form (Satu-satunya gerbang utama untuk memicu pencarian data)
     proses_button = st.form_submit_button(label="🔍 Cek & Validasi Data", type="primary", use_container_width=True)
-
-# PERBAIKAN: JavaScript otomatis untuk mengubah fungsi Enter di kolom ID menjadi tombol Pindah (Tab)
-components.html(
-    """
-    <script>
-    // Fungsi untuk memantau input di halaman Streamlit
-    function aturFokusEnter() {
-        const inputs = window.parent.document.querySelectorAll('input[type="text"], input[type="number"]');
-        if (inputs.length >= 2) {
-            const inputID = inputs[0];
-            const inputBox = inputs[1];
-            
-            // Jika tombol enter ditekan di kolom ID, pindahkan fokus ke kolom Box
-            inputID.onkeydown = function(e) {
-                if (e.keyCode === 13) {
-                    e.preventDefault(); // Cegah Validasi / Submit Form
-                    inputBox.focus();   // Alihkan kursor ke Jumlah Box
-                }
-            };
-        }
-    }
-    // Jalankan skrip secara berkala untuk memastikan elemen web sudah dimuat penuh
-    setTimeout(aturFokusEnter, 500);
-    setInterval(aturFokusEnter, 2000);
-    </script>
-    """,
-    height=0, # Disembunyikan agar tidak merusak tampilan form
-)
 
 # Logika pemrosesan setelah tombol ditekan atau pengguna menekan Enter di kolom Jumlah Box
 if proses_button:
@@ -107,8 +79,8 @@ if proses_button:
             pencarian = df_database[df_database['ID_STR'] == id_inputan]
             
             if not pencarian.empty:
-                tujuan_terdeteksi = str(pencarian.iloc['Tujuan Pengiriman']).strip()
-                pic_terdeteksi = str(pencarian.iloc['Nama PIC']).strip()
+                tujuan_terdeteksi = str(pencarian.iloc[0]['Tujuan Pengiriman']).strip()
+                pic_terdeteksi = str(pencarian.iloc[0]['Nama PIC']).strip()
                 
                 # Menampilkan Informasi Data Secara Vertikal untuk dibaca pengguna
                 st.success("✅ Data Berhasil Ditemukan! Silakan baca data sebelum mencetak.")
