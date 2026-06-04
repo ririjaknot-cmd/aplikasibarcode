@@ -75,14 +75,16 @@ diubah = False
 df_proses = df_edit.copy()
 
 for idx, row in df_proses.iterrows():
-    id_inputan = str(row["Masukkan ID"]).strip().replace('.0', '', regex=False)
+    # PERBAIKAN: Menghapus parameter 'regex=False' karena ini fungsi string biasa
+    id_inputan = str(row["Masukkan ID"]).strip().replace('.0', '')
     
     if id_inputan != "" and id_inputan != "None" and not pd.isna(row["Masukkan ID"]):
-        # Konversi dinamis agar tipe data angka maupun teks bisa saling mencocokkan
+        # Pastikan data ID di database dibersihkan dengan cara yang sama
         df_database['ID_STR'] = df_database['ID'].astype(str).str.strip().str.replace('.0', '', regex=False)
         pencarian = df_database[df_database['ID_STR'] == id_inputan]
         
         if not pencarian.empty:
+            # PERBAIKAN FATAL: Menggunakan .iloc[0] untuk mengambil baris pertama hasil pencarian
             tujuan_terdeteksi = str(pencarian.iloc[0]['Tujuan Pengiriman']).strip()
             pic_terdeteksi = str(pencarian.iloc[0]['Nama PIC']).strip()
         else:
