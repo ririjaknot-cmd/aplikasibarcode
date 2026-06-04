@@ -12,7 +12,7 @@ st.title("📦 QR Barcode ID Cabang 2026")
 
 # Tautan langsung ke Google Sheets Anda
 ID_SHEETS_BARU = "1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4"
-URL_EKSPOR_LANGSUNG = f"https://docs.google.com/spreadsheets/d/{ID_SHEETS_BARU}/export?format=csv"
+URL_EKSPOR_LANGSUNG = f"https://google.com{ID_SHEETS_BARU}/export?format=csv"
 
 def muat_database():
     try:
@@ -53,20 +53,48 @@ df_database = muat_database()
 # TAMPILAN FORMULIR INPUT VERTIKAL (MENURUN)
 # =========================================================================
 st.subheader("📝 Formulir Input ID")
-st.caption("Tips: Masukkan ID, tekan Tab untuk pindah ke Jumlah Box, lalu tekan Enter.")
+st.caption("Tips: Masukkan ID, tekan Tab atau Enter untuk pindah ke Jumlah Box. Setelah isi Jumlah Box, tekan Enter untuk Validasi.")
 
 # Form dibuat vertikal menurun ke bawah
 with st.form(key="form_vertikal_shipment"):
     # 1. Baris Pertama: Input ID
     id_inputan = st.text_input("Masukkan ID", value="").strip().replace('.0', '')
     
-    # 2. Baris Kedua: Input Jumlah Box (DIUBAH AGAR DI AWAL KOSONG)
+    # 2. Baris Kedua: Input Jumlah Box (Kondisi Awal Kosong)
     jumlah_box = st.number_input("Jumlah Box", min_value=1, value=None, step=1)
     
     # Tombol submit form (Memproses data ke layar tanpa langsung memicu print)
     proses_button = st.form_submit_button(label="🔍 Cek & Validasi Data", type="primary", use_container_width=True)
 
-# Logika pemrosesan setelah tombol ditekan atau pengguna menekan Enter
+# PERBAIKAN: JavaScript otomatis untuk mengubah fungsi Enter di kolom ID menjadi tombol Pindah (Tab)
+components.html(
+    """
+    <script>
+    // Fungsi untuk memantau input di halaman Streamlit
+    function aturFokusEnter() {
+        const inputs = window.parent.document.querySelectorAll('input[type="text"], input[type="number"]');
+        if (inputs.length >= 2) {
+            const inputID = inputs[0];
+            const inputBox = inputs[1];
+            
+            // Jika tombol enter ditekan di kolom ID, pindahkan fokus ke kolom Box
+            inputID.onkeydown = function(e) {
+                if (e.keyCode === 13) {
+                    e.preventDefault(); // Cegah Validasi / Submit Form
+                    inputBox.focus();   // Alihkan kursor ke Jumlah Box
+                }
+            };
+        }
+    }
+    // Jalankan skrip secara berkala untuk memastikan elemen web sudah dimuat penuh
+    setTimeout(aturFokusEnter, 500);
+    setInterval(aturFokusEnter, 2000);
+    </script>
+    """,
+    height=0, # Disembunyikan agar tidak merusak tampilan form
+)
+
+# Logika pemrosesan setelah tombol ditekan atau pengguna menekan Enter di kolom Jumlah Box
 if proses_button:
     if id_inputan == "":
         st.error("Silakan isi data ID terlebih dahulu!")
@@ -79,8 +107,8 @@ if proses_button:
             pencarian = df_database[df_database['ID_STR'] == id_inputan]
             
             if not pencarian.empty:
-                tujuan_terdeteksi = str(pencarian.iloc[0]['Tujuan Pengiriman']).strip()
-                pic_terdeteksi = str(pencarian.iloc[0]['Nama PIC']).strip()
+                tujuan_terdeteksi = str(pencarian.iloc['Tujuan Pengiriman']).strip()
+                pic_terdeteksi = str(pencarian.iloc['Nama PIC']).strip()
                 
                 # Menampilkan Informasi Data Secara Vertikal untuk dibaca pengguna
                 st.success("✅ Data Berhasil Ditemukan! Silakan baca data sebelum mencetak.")
