@@ -99,7 +99,7 @@ if diubah:
     st.session_state.tabel_data = df_proses
     st.rerun()
 
-if st.button("🖨️ Cetak QR Code Langsung", type="primary"):
+if st.button("🖨️ Cetak QR Code", type="primary"):
     if df_proses.empty or df_proses['Masukkan ID'].isna().all() or df_proses['Masukkan ID'].eq('').all():
         st.error("Silakan isi data ID pada tabel terlebih dahulu!")
     else:
