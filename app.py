@@ -7,9 +7,8 @@ import streamlit.components.v1 as components
 import requests         
 from io import StringIO   
 
-st.set_page_config(page_title="Generator QR Code Massal", layout="centered")
-st.title("📦 Sistem Input & Cetak QR Code Otomatis")
-st.write("Tujuan Pengiriman & Nama PIC (Operator) akan terisi otomatis di dalam tabel saat ID Unik diisi.")
+st.set_page_config(page_title="Shipment Cabang", layout="centered")
+st.title("📦 QR Barcode ID Cabang")
 
 # PERBAIKAN: Menggunakan ID Dokumen Asli berdasarkan Log Anda
 ID_SHEETS_BARU = "1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4"
@@ -50,8 +49,8 @@ def muat_database():
 # Jalankan fungsi muat data
 df_database = muat_database()
 
-st.subheader("📝 Tabel Input Data")
-st.caption("Tips: Isi kolom 'Masukkan ID' dan tekan Enter, maka kolom Tujuan dan Operator PIC akan otomatis terisi.")
+st.subheader("📝 Tabel Input ID")
+st.caption("Tips: Isi kolom 'Masukkan ID' dan tekan Enter, maka kolom Tujuan dan Nama PIC akan otomatis terisi.")
 
 if 'tabel_data' not in st.session_state:
     st.session_state.tabel_data = pd.DataFrame([
