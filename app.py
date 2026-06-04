@@ -12,14 +12,17 @@ st.title("📦 QR Barcode ID Cabang 2026")
 
 # Tautan langsung ke Google Sheets Anda
 ID_SHEETS_BARU = "1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4"
-URL_EKSPOR_LANGSUNG = f"https://google.com{ID_SHEETS_BARU}/export?format=csv"
+URL_EKSPOR_LANGSUNG = f"https://docs.google.com/spreadsheets/d/{ID_SHEETS_BARU}/export?format=csv"
 
 def muat_database():
     try:
         respon = requests.get(URL_EKSPOR_LANGSUNG, timeout=10)
         respon.raise_for_status() 
+        
+        # Baca teks mentah CSV tanpa memotong baris terlebih dahulu
         df_raw = pd.read_csv(StringIO(respon.text), header=None)
         
+        # Cari di baris mana kata "ID" berada (Deteksi Otomatis letak Header)
         header_idx = 0
         for idx, row in df_raw.iterrows():
             row_str = row.astype(str).str.replace('"', '').str.strip().tolist()
@@ -27,70 +30,67 @@ def muat_database():
                 header_idx = idx
                 break
                 
+        # Baca ulang CSV dari baris header yang tepat
         df_db = pd.read_csv(StringIO(respon.text), skiprows=header_idx)
         df_db.columns = df_db.columns.astype(str).str.replace('"', '').str.replace('\n', ' ').str.strip()
+        
+        # Cek ketersediaan kolom wajib
+        kolom_wajib = ['ID', 'Tujuan Pengiriman', 'Nama PIC']
+        for col in kolom_wajib:
+            if col not in df_db.columns:
+                df_db[col] = ""
+                st.warning(f"⚠️ Kolom '{col}' tidak ditemukan! Nama kolom yang ada saat ini: {list(df_db.columns[:4])}")
+                
         return df_db
     except Exception as e:
         st.error(f"⚠️ Gagal terhubung ke Google Sheets: {e}")
         return pd.DataFrame(columns=['ID', 'Tujuan Pengiriman', 'Nama PIC'])
 
+# Jalankan fungsi muat data
 df_database = muat_database()
 
-# Inisialisasi session state agar data peninjauan tidak hilang saat tombol cetak diklik
-if 'tujuan_terbaca' not in st.session_state:
-    st.session_state.tujuan_terbaca = ""
-if 'pic_terbaca' not in st.session_state:
-    st.session_state.pic_terbaca = ""
-if 'id_terbaca' not in st.session_state:
-    st.session_state.id_terbaca = ""
-if 'box_terbaca' not in st.session_state:
-    st.session_state.box_terbaca = 1
-
+# =========================================================================
+# TAMPILAN FORMULIR INPUT VERTIKAL (MENURUN)
+# =========================================================================
 st.subheader("📝 Formulir Input ID")
-st.caption("Tips: Masukkan ID, tekan Tab untuk pindah ke Jumlah Box, lalu tekan Enter untuk memvalidasi data.")
+st.caption("Tips: Masukkan ID (bisa gunakan scanner), tekan Tab untuk pindah ke Jumlah Box, lalu tekan Enter.")
 
-# TAHAP 1: FORM INPUT VERTIKAL YANG AMAN DARI ERROR KURSOR
-with st.form(key="form_input_aman", clear_on_submit=False):
+# Form dibuat vertikal menurun ke bawah
+with st.form(key="form_vertikal_shipment"):
+    # 1. Baris Pertama: Input ID
     id_inputan = st.text_input("Masukkan ID", value="").strip().replace('.0', '')
+    
+    # 2. Baris Kedua: Input Jumlah Box
     jumlah_box = st.number_input("Jumlah Box", min_value=1, value=1, step=1)
     
-    # Tombol ini bertindak sebagai pemicu saat user menekan Enter di dalam form
-    cek_button = st.form_submit_button(label="🔍 1. Validasi & Cek Data", type="secondary", use_container_width=True)
+    # Tombol submit form (Atau otomatis terpicu saat tekan Enter di keyboard)
+    proses_button = st.form_submit_button(label="🔍 Proses & Cetak QR Code", type="primary")
 
-# Logika pencarian data hanya berjalan saat tombol Cek/Enter ditekan (Mencegah eror pengetikan)
-if cek_button:
+# Logika pemrosesan setelah tombol ditekan atau pengguna menekan Enter
+if proses_button:
     if id_inputan == "":
         st.error("Silakan isi data ID terlebih dahulu!")
     else:
-        df_database['ID_STR'] = df_database['ID'].astype(str).str.strip().str.replace('.0', '', regex=False)
-        pencarian = df_database[df_database['ID_STR'] == id_inputan]
-        
-        if not pencarian.empty:
-            st.session_state.tujuan_terbaca = str(pencarian.iloc[0]['Tujuan Pengiriman']).strip()
-            st.session_state.pic_terbaca = str(pencarian.iloc[0]['Nama PIC']).strip()
-            st.session_state.id_terbaca = id_inputan
-            st.session_state.box_terbaca = int(jumlah_box)
-        else:
-            st.session_state.tujuan_terbaca = "ID TIDAK DITEMUKAN"
-            st.session_state.pic_terbaca = "TIDAK DIKETAHUI"
-            st.session_state.id_terbaca = ""
-
-# TAHAP 2: MENAMPILKAN DATA UNTUK DIBACA USER (DI LUAR FORM)
-if st.session_state.tujuan_terbaca != "":
-    if st.session_state.tujuan_terbaca == "ID TIDAK DITEMUKAN":
-        st.error(f"❌ ID Tidak Ditemukan di dalam Database Google Sheets!")
-    else:
-        st.success("✅ Data Berhasil Ditemukan! Silakan tinjau data di bawah ini sebelum mencetak.")
-        st.info(f"**📍 Tujuan Pengiriman:** {st.session_state.tujuan_terbaca}")
-        st.info(f"**👤 Nama PIC:** {st.session_state.pic_terbaca}")
-        
-        st.divider()
-        
-        # TAHAP 3: TOMBOL CETAK MANUAL MANDIRI
-        st.subheader("🖨️ Menu Pencetakan")
-        if st.button("🖨️ 2. Cetak QR Code Sekarang", type="primary", use_container_width=True):
-            try:
-                with st.spinner("Menyiapkan dokumen cetak..."):
+        with st.spinner("Mencari data dan menyiapkan lembar cetak..."):
+            # Sinkronisasi format tipe data ID agar pencarian akurat
+            df_database['ID_STR'] = df_database['ID'].astype(str).str.strip().str.replace('.0', '', regex=False)
+            pencarian = df_database[df_database['ID_STR'] == id_inputan]
+            
+            if not pencarian.empty:
+                tujuan_terdeteksi = str(pencarian.iloc[0]['Tujuan Pengiriman']).strip()
+                pic_terdeteksi = str(pencarian.iloc[0]['Nama PIC']).strip()
+                
+                # Menampilkan Informasi Data yang Berhasil Ditemukan (Menurun kebawah)
+                st.success("✅ Data Berhasil Ditemukan!")
+                
+                # Menggunakan layout container agar informasi tersusun vertikal dengan rapi
+                st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
+                st.info(f"**👤 Nama PIC:** {pic_terdeteksi}")
+                
+                # =========================================================================
+                # PEMBUATAN DAN PENCETAKAN QR CODE OTOMATIS
+                # =========================================================================
+                try:
                     html_konten = """
                     <html>
                     <head>
@@ -100,15 +100,17 @@ if st.session_state.tujuan_terbaca != "":
                         .kotak-label { border: 1px solid #CCCCCC; padding: 10px; text-align: center; border-radius: 4px; page-break-inside: avoid; }
                         .info-teks { font-size: 11px; text-align: left; margin-top: 5px; line-height: 14px; }
                         img { width: 100px; height: 100px; }
+                        @media print { .no-print { display: none !important; } }
                     </style>
                     </head>
                     <body>
                     <div class="grid-kontainer">
                     """
                     
-                    for b in range(1, st.session_state.box_terbaca + 1):
+                    # Looping pembuatan QR Code berdasarkan jumlah box yang dimasukkan
+                    for b in range(1, int(jumlah_box) + 1):
                         qr = qrcode.QRCode(version=1, box_size=10, border=1)
-                        qr.add_data(st.session_state.id_terbaca)
+                        qr.add_data(id_inputan)
                         qr.make(fit=True)
                         img_qr = qr.make_image(fill_color="black", back_color="white")
                         
@@ -122,9 +124,9 @@ if st.session_state.tujuan_terbaca != "":
                         <div class="kotak-label">
                             <img src="data:image/png;base64,{img_base64}" />
                             <div class="info-teks">
-                                <b>ID:</b> {st.session_state.id_terbaca}<br/>
-                                <b>Box:</b> {b} dari {st.session_state.box_terbaca}<br/>
-                                <b>Tujuan:</b> {st.session_state.tujuan_terbaca}
+                                <b>ID:</b> {id_inputan}<br/>
+                                <b>Box:</b> {b} dari {jumlah_box}<br/>
+                                <b>Tujuan:</b> {tujuan_terdeteksi}
                             </div>
                         </div>
                         """
@@ -136,7 +138,12 @@ if st.session_state.tujuan_terbaca != "":
                     </html>
                     """
                     
+                    st.subheader("🖨️ Pratinjau Lembar Cetak")
+                    st.caption("Dialog printer cetak otomatis akan langsung terbuka di peramban Anda.")
                     components.html(html_konten, height=400, scrolling=True)
                     
-            except Exception as err:
-                st.error(f"Gagal memproses cetak: {err}")
+                except Exception as err:
+                    st.error(f"Gagal memproses cetak: {err}")
+            else:
+                # Kondisi jika ID yang dicari tidak ada di database Google Sheets
+                st.error(f"❌ ID '{id_inputan}' TIDAK DITEMUKAN di dalam Database Google Sheets!")
