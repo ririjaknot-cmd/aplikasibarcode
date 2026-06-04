@@ -12,7 +12,7 @@ st.title("📦 QR Barcode ID Cabang 2026")
 
 # Tautan langsung ke Google Sheets Anda
 ID_SHEETS_BARU = "1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4"
-URL_EKSPOR_LANGSUNG = f"https://docs.google.com/spreadsheets/d/{ID_SHEETS_BARU}/export?format=csv"
+URL_EKSPOR_LANGSUNG = f"https://google.com{ID_SHEETS_BARU}/export?format=csv"
 
 def muat_database():
     try:
@@ -33,14 +33,6 @@ def muat_database():
         # Baca ulang CSV dari baris header yang tepat
         df_db = pd.read_csv(StringIO(respon.text), skiprows=header_idx)
         df_db.columns = df_db.columns.astype(str).str.replace('"', '').str.replace('\n', ' ').str.strip()
-        
-        # Cek ketersediaan kolom wajib
-        kolom_wajib = ['ID', 'Tujuan Pengiriman', 'Nama PIC']
-        for col in kolom_wajib:
-            if col not in df_db.columns:
-                df_db[col] = ""
-                st.warning(f"⚠️ Kolom '{col}' tidak ditemukan! Nama kolom yang ada saat ini: {list(df_db.columns[:4])}")
-                
         return df_db
     except Exception as e:
         st.error(f"⚠️ Gagal terhubung ke Google Sheets: {e}")
@@ -53,44 +45,36 @@ df_database = muat_database()
 # TAMPILAN FORMULIR INPUT VERTIKAL (MENURUN)
 # =========================================================================
 st.subheader("📝 Formulir Input ID")
-st.caption("Tips: Masukkan ID (bisa gunakan scanner), tekan Tab untuk pindah ke Jumlah Box, lalu tekan Enter.")
+st.caption("Tips: Masukkan ID, tekan Tab untuk pindah ke Jumlah Box, lalu tekan Enter untuk melihat data tujuan.")
 
-# Form dibuat vertikal menurun ke bawah
-with st.form(key="form_vertikal_shipment"):
-    # 1. Baris Pertama: Input ID
-    id_inputan = st.text_input("Masukkan ID", value="").strip().replace('.0', '')
-    
-    # 2. Baris Kedua: Input Jumlah Box
-    jumlah_box = st.number_input("Jumlah Box", min_value=1, value=1, step=1)
-    
-    # Tombol submit form (Atau otomatis terpicu saat tekan Enter di keyboard)
-    proses_button = st.form_submit_button(label="🔍 Proses & Cetak QR Code", type="primary")
+# Menggunakan widget standar Streamlit (bukan st.form) agar data langsung terproses saat Enter
+id_inputan = st.text_input("Masukkan ID", value="").strip().replace('.0', '')
+jumlah_box = st.number_input("Jumlah Box", min_value=1, value=1, step=1)
 
-# Logika pemrosesan setelah tombol ditekan atau pengguna menekan Enter
-if proses_button:
-    if id_inputan == "":
-        st.error("Silakan isi data ID terlebih dahulu!")
-    else:
-        with st.spinner("Mencari data dan menyiapkan lembar cetak..."):
-            # Sinkronisasi format tipe data ID agar pencarian akurat
-            df_database['ID_STR'] = df_database['ID'].astype(str).str.strip().str.replace('.0', '', regex=False)
-            pencarian = df_database[df_database['ID_STR'] == id_inputan]
-            
-            if not pencarian.empty:
-                tujuan_terdeteksi = str(pencarian.iloc[0]['Tujuan Pengiriman']).strip()
-                pic_terdeteksi = str(pencarian.iloc[0]['Nama PIC']).strip()
-                
-                # Menampilkan Informasi Data yang Berhasil Ditemukan (Menurun kebawah)
-                st.success("✅ Data Berhasil Ditemukan!")
-                
-                # Menggunakan layout container agar informasi tersusun vertikal dengan rapi
-                st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
-                st.info(f"**👤 Nama PIC:** {pic_terdeteksi}")
-                
-                # =========================================================================
-                # PEMBUATAN DAN PENCETAKAN QR CODE OTOMATIS
-                # =========================================================================
-                try:
+# Wadah logika pemrosesan data saat ID diisi
+if id_inputan != "":
+    # Sinkronisasi format tipe data ID agar pencarian akurat
+    df_database['ID_STR'] = df_database['ID'].astype(str).str.strip().str.replace('.0', '', regex=False)
+    pencarian = df_database[df_database['ID_STR'] == id_inputan]
+    
+    if not pencarian.empty:
+        tujuan_terdeteksi = str(pencarian.iloc[0]['Tujuan Pengiriman']).strip()
+        pic_terdeteksi = str(pencarian.iloc[0]['Nama PIC']).strip()
+        
+        # 1. TAMPILKAN DATA UNTUK DIBACA USER TERLEBIH DAHULU
+        st.success("✅ Data Berhasil Ditemukan!")
+        
+        # Desain vertikal menurun yang nyaman dibaca
+        st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
+        st.info(f"**👤 Nama PIC:** {pic_terdeteksi}")
+        
+        st.divider() # Garis pembatas pembacaan data
+        
+        # 2. TOMBOL CETAK MANUAL (Jendela print baru muncul jika tombol ini diklik)
+        st.subheader("🖨️ Menu Pencetakan")
+        if st.button("🖨️ Cetak QR Code Sekarang", type="primary", use_container_width=True):
+            try:
+                with st.spinner("Menyiapkan dokumen cetak..."):
                     html_konten = """
                     <html>
                     <head>
@@ -100,14 +84,13 @@ if proses_button:
                         .kotak-label { border: 1px solid #CCCCCC; padding: 10px; text-align: center; border-radius: 4px; page-break-inside: avoid; }
                         .info-teks { font-size: 11px; text-align: left; margin-top: 5px; line-height: 14px; }
                         img { width: 100px; height: 100px; }
-                        @media print { .no-print { display: none !important; } }
                     </style>
                     </head>
                     <body>
                     <div class="grid-kontainer">
                     """
                     
-                    # Looping pembuatan QR Code berdasarkan jumlah box yang dimasukkan
+                    # Looping pembuatan QR Code berdasarkan jumlah box
                     for b in range(1, int(jumlah_box) + 1):
                         qr = qrcode.QRCode(version=1, box_size=10, border=1)
                         qr.add_data(id_inputan)
@@ -138,12 +121,11 @@ if proses_button:
                     </html>
                     """
                     
-                    st.subheader("🖨️ Pratinjau Lembar Cetak")
-                    st.caption("Dialog printer cetak otomatis akan langsung terbuka di peramban Anda.")
+                    # Tampilkan pratinjau lembar cetak dan picu window.print() browser
                     components.html(html_konten, height=400, scrolling=True)
                     
-                except Exception as err:
-                    st.error(f"Gagal memproses cetak: {err}")
-            else:
-                # Kondisi jika ID yang dicari tidak ada di database Google Sheets
-                st.error(f"❌ ID '{id_inputan}' TIDAK DITEMUKAN di dalam Database Google Sheets!")
+            except Exception as err:
+                st.error(f"Gagal memproses cetak: {err}")
+    else:
+        # Kondisi jika ID yang dicari tidak ada di database Google Sheets
+        st.error(f"❌ ID '{id_inputan}' TIDAK DITEMUKAN di dalam Database Google Sheets!")
