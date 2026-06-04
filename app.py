@@ -75,15 +75,16 @@ diubah = False
 df_proses = df_edit.copy()
 
 for idx, row in df_proses.iterrows():
-    id_inputan = str(row["Masukkan ID"]).strip()
+    id_inputan = str(row["Masukkan ID"]).strip().replace('.0', '', regex=False)
     
     if id_inputan != "" and id_inputan != "None" and not pd.isna(row["Masukkan ID"]):
-        pencarian = df_database[df_database['ID'].astype(str).str.strip() == id_inputan]
+        # Konversi dinamis agar tipe data angka maupun teks bisa saling mencocokkan
+        df_database['ID_STR'] = df_database['ID'].astype(str).str.strip().str.replace('.0', '', regex=False)
+        pencarian = df_database[df_database['ID_STR'] == id_inputan]
         
         if not pencarian.empty:
-            # PERBAIKAN LOGIKA: Menggunakan .iloc[0] agar mengambil nilai baris pertama dengan benar
-            tujuan_terdeteksi = str(pencarian.iloc[0]['Tujuan Pengiriman'])
-            pic_terdeteksi = str(pencarian.iloc[0]['Nama PIC'])
+            tujuan_terdeteksi = str(pencarian.iloc[0]['Tujuan Pengiriman']).strip()
+            pic_terdeteksi = str(pencarian.iloc[0]['Nama PIC']).strip()
         else:
             tujuan_terdeteksi = "ID TIDAK DITEMUKAN"
             pic_terdeteksi = "TIDAK DIKETAHUI"
