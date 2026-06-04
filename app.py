@@ -11,27 +11,36 @@ st.set_page_config(page_title="Generator QR Code Massal", layout="centered")
 st.title("📦 Sistem Input & Cetak QR Code Otomatis")
 st.write("Tujuan Pengiriman & Nama PIC (Operator) akan terisi otomatis di dalam tabel saat ID Unik diisi.")
 
-# Link langsung ke file Google Sheets Anda (Menggunakan tab pertama)
-URL_EKSPOR_LANGSUNG = "https://docs.google.com/spreadsheets/d/1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4/edit?usp=sharing"
+# PERBAIKAN: Menggunakan ID Dokumen Asli berdasarkan Log Anda
+ID_SHEETS_BARU = "1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4"
+URL_EKSPOR_LANGSUNG = f"https://docs.google.com/spreadsheets/d/{ID_SHEETS_BARU}/export?format=csv"
 
-# Membaca database secara langsung tanpa cache agar data selalu aktual
 def muat_database():
     try:
         respon = requests.get(URL_EKSPOR_LANGSUNG, timeout=10)
         respon.raise_for_status() 
         
-        # Baca CSV dari baris pertama (Tanpa skiprows)
-        df_db = pd.read_csv(StringIO(respon.text))
+        # Baca teks mentah CSV tanpa memotong baris terlebih dahulu
+        df_raw = pd.read_csv(StringIO(respon.text), header=None)
         
-        # Bersihkan nama kolom dari spasi liar dan tanda kutip
-        df_db.columns = df_db.columns.astype(str).str.replace('"', '').str.strip()
+        # Cari di baris mana kata "ID" berada (Deteksi Otomatis letak Header)
+        header_idx = 0
+        for idx, row in df_raw.iterrows():
+            row_str = row.astype(str).str.replace('"', '').str.strip().tolist()
+            if "ID" in row_str or "Tujuan Pengiriman" in row_str:
+                header_idx = idx
+                break
+                
+        # Baca ulang CSV dari baris header yang tepat
+        df_db = pd.read_csv(StringIO(respon.text), skiprows=header_idx)
+        df_db.columns = df_db.columns.astype(str).str.replace('"', '').str.replace('\n', ' ').str.strip()
         
         # Cek ketersediaan kolom wajib
         kolom_wajib = ['ID', 'Tujuan Pengiriman', 'Nama PIC']
         for col in kolom_wajib:
             if col not in df_db.columns:
                 df_db[col] = ""
-                st.warning(f"⚠️ Kolom '{col}' tidak ditemukan! Nama kolom yang ada di file Anda saat ini adalah: {list(df_db.columns[:4])}")
+                st.warning(f"⚠️ Kolom '{col}' tidak ditemukan! Nama kolom yang ada saat ini: {list(df_db.columns[:4])}")
                 
         return df_db
     except Exception as e:
@@ -71,14 +80,15 @@ for idx, row in df_proses.iterrows():
     if id_inputan != "" and id_inputan != "None" and not pd.isna(row["Masukkan ID"]):
         pencarian = df_database[df_database['ID'].astype(str).str.strip() == id_inputan]
         
-        if not pencarian.empty and str(pencarian.iloc[0]['Tujuan Pengiriman']).strip() != "":
+        if not pencarian.empty:
+            # PERBAIKAN LOGIKA: Menggunakan .iloc[0] agar mengambil nilai baris pertama dengan benar
             tujuan_terdeteksi = str(pencarian.iloc[0]['Tujuan Pengiriman'])
             pic_terdeteksi = str(pencarian.iloc[0]['Nama PIC'])
         else:
             tujuan_terdeteksi = "ID TIDAK DITEMUKAN"
             pic_terdeteksi = "TIDAK DIKETAHUI"
             
-        if row["Tujuan Pengiriman"] != tujuan_terdeteksi or row["Operator PIC"] != pic_terdeteksi:
+        if str(row["Tujuan Pengiriman"]).strip() != tujuan_terdeteksi or str(row["Operator PIC"]).strip() != pic_terdeteksi:
             df_proses.at[idx, "Tujuan Pengiriman"] = tujuan_terdeteksi
             df_proses.at[idx, "Operator PIC"] = pic_terdeteksi
             diubah = True
