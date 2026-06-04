@@ -12,17 +12,15 @@ st.title("📦 QR Barcode ID Cabang 2026")
 
 # Tautan langsung ke Google Sheets Anda
 ID_SHEETS_BARU = "1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4"
-URL_EKSPOR_LANGSUNG = f"https://docs.google.com/spreadsheets/d/{ID_SHEETS_BARU}/export?format=csv"
+URL_EKSPOR_LANGSUNG = f"https://google.com{ID_SHEETS_BARU}/export?format=csv"
 
 def muat_database():
     try:
         respon = requests.get(URL_EKSPOR_LANGSUNG, timeout=10)
         respon.raise_for_status() 
         
-        # Baca teks mentah CSV tanpa memotong baris terlebih dahulu
         df_raw = pd.read_csv(StringIO(respon.text), header=None)
         
-        # Cari di baris mana kata "ID" berada (Deteksi Otomatis letak Header)
         header_idx = 0
         for idx, row in df_raw.iterrows():
             row_str = row.astype(str).str.replace('"', '').str.strip().tolist()
@@ -30,59 +28,61 @@ def muat_database():
                 header_idx = idx
                 break
                 
-        # Baca ulang CSV dari baris header yang tepat
         df_db = pd.read_csv(StringIO(respon.text), skiprows=header_idx)
         df_db.columns = df_db.columns.astype(str).str.replace('"', '').str.replace('\n', ' ').str.strip()
         
-        # Cek ketersediaan kolom wajib
         kolom_wajib = ['ID', 'Tujuan Pengiriman', 'Nama PIC']
         for col in kolom_wajib:
             if col not in df_db.columns:
                 df_db[col] = ""
-                st.warning(f"⚠️ Kolom '{col}' tidak ditemukan! Nama kolom yang ada saat ini: {list(df_db.columns[:4])}")
+                st.warning(f"⚠️ Kolom '{col}' tidak ditemukan! Nama kolom saat ini: {list(df_db.columns[:4])}")
                 
         return df_db
     except Exception as e:
         st.error(f"⚠️ Gagal terhubung ke Google Sheets: {e}")
         return pd.DataFrame(columns=['ID', 'Tujuan Pengiriman', 'Nama PIC'])
 
-# Jalankan fungsi muat data
 df_database = muat_database()
 
 # =========================================================================
 # TAMPILAN FORMULIR INPUT VERTIKAL (MENURUN)
 # =========================================================================
 st.subheader("📝 Formulir Input ID")
-st.caption("Tips: Masukkan ID, tekan Tab untuk pindah ke Jumlah Box, lalu tekan Enter.")
+st.caption("Tips: Masukkan ID, tekan Tab/Enter untuk pindah ke Jumlah Box. Setelah isi Jumlah Box, tekan Enter atau klik tombol Validasi.")
 
-# Form dibuat vertikal menurun ke bawah
-with st.form(key="form_vertikal_shipment"):
+# Menggunakan satu Form besar agar menekan enter di ID pindah ke Jumlah Box tanpa memicu validasi awal
+with st.form(key="form_vertikal_shipment_sempurna"):
     # 1. Baris Pertama: Input ID
     id_inputan = st.text_input("Masukkan ID", value="").strip().replace('.0', '')
     
-    # 2. Baris Kedua: Input Jumlah Box
-    jumlah_box = st.number_input("Jumlah Box", min_value=1, value=1, step=1)
+    # 2. Baris Kedua: Input Jumlah Box dikosongkan di awal (menggunakan teks agar bisa kosong murni)
+    jumlah_box_raw = st.text_input("Jumlah Box", value="")
     
-    # Tombol submit form (Memproses data ke layar tanpa langsung memicu print)
+    # Tombol submit form (Satu-satunya pemicu eksekusi validasi data)
     proses_button = st.form_submit_button(label="🔍 Cek & Validasi Data", type="primary", use_container_width=True)
 
-# Logika pemrosesan setelah tombol ditekan atau pengguna menekan Enter
+# Logika pemrosesan setelah tombol ditekan atau pengguna menekan Enter di kolom Jumlah Box
 if proses_button:
+    # Validasi inputan kosong
     if id_inputan == "":
         st.error("Silakan isi data ID terlebih dahulu!")
+    elif jumlah_box_raw.strip() == "":
+        st.error("Silakan isi Jumlah Box terlebih dahulu!")
+    elif not jumlah_box_raw.strip().isdigit() or int(jumlah_box_raw) < 1:
+        st.error("Jumlah Box harus berupa angka bulat minimal 1!")
     else:
+        jumlah_box = int(jumlah_box_raw.strip())
+        
         with st.spinner("Mencari data ke database..."):
-            # Sinkronisasi format tipe data ID agar pencarian akurat
             df_database['ID_STR'] = df_database['ID'].astype(str).str.strip().str.replace('.0', '', regex=False)
             pencarian = df_database[df_database['ID_STR'] == id_inputan]
             
             if not pencarian.empty:
-                tujuan_terdeteksi = str(pencarian.iloc[0]['Tujuan Pengiriman']).strip()
-                pic_terdeteksi = str(pencarian.iloc[0]['Nama PIC']).strip()
+                tujuan_terdeteksi = str(pencarian.iloc['Tujuan Pengiriman']).strip()
+                pic_terdeteksi = str(pencarian.iloc['Nama PIC']).strip()
                 
-                # Menampilkan Informasi Data Secara Vertikal untuk dibaca pengguna
+                # Tampilkan data hasil validasi untuk ditinjau oleh pengguna
                 st.success("✅ Data Berhasil Ditemukan! Silakan baca data sebelum mencetak.")
-                
                 st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
                 st.info(f"**👤 Nama PIC:** {pic_terdeteksi}")
                 
@@ -90,7 +90,6 @@ if proses_button:
                 # PEMBUATAN DOKUMEN PREVIEW & TOMBOL PRINT MANUAL
                 # =========================================================================
                 try:
-                    # KODE UTAMA: Desain HTML + Tombol Print Mandiri di dalam dokumen pratinjau
                     html_konten = """
                     <html>
                     <head>
@@ -113,8 +112,6 @@ if proses_button:
                         .kotak-label { border: 1px solid #CCCCCC; padding: 10px; text-align: center; border-radius: 4px; page-break-inside: avoid; }
                         .info-teks { font-size: 11px; text-align: left; margin-top: 5px; line-height: 14px; }
                         img { width: 100px; height: 100px; }
-                        
-                        /* Menyembunyikan tombol cetak saat kertas printer sedang mencetak */
                         @media print { 
                             .no-print { display: none !important; } 
                         }
@@ -122,7 +119,6 @@ if proses_button:
                     </head>
                     <body>
                     
-                    <!-- PERBAIKAN UTAMA: Tombol cetak manual diletakkan di dalam halaman pratinjau -->
                     <div class="area-tombol no-print">
                         <button class="tombol-print" onclick="window.print()">🖨️ KLIK DI SINI UNTUK CETAK SEKARANG</button>
                     </div>
@@ -130,8 +126,8 @@ if proses_button:
                     <div class="grid-kontainer">
                     """
                     
-                    # Looping pembuatan QR Code berdasarkan jumlah box
-                    for b in range(1, int(jumlah_box) + 1):
+                    # Looping pembuatan QR Code berdasarkan jumlah box yang dikonversi
+                    for b in range(1, jumlah_box + 1):
                         qr = qrcode.QRCode(version=1, box_size=10, border=1)
                         qr.add_data(id_inputan)
                         qr.make(fit=True)
@@ -154,7 +150,6 @@ if proses_button:
                         </div>
                         """
                     
-                    # PERBAIKAN UTAMA: Menghapus window.print() otomatis saat halaman dimuat
                     html_konten += """
                     </div>
                     </body>
@@ -168,5 +163,4 @@ if proses_button:
                 except Exception as err:
                     st.error(f"Gagal memproses pratinjau cetak: {err}")
             else:
-                # Kondisi jika ID yang dicari tidak ada di database Google Sheets
                 st.error(f"❌ ID '{id_inputan}' TIDAK DITEMUKAN di dalam Database Google Sheets!")
