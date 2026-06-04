@@ -28,18 +28,34 @@ def muat_database(url_input):
         else:
             sheet_id = url_str
             
-        # NAMA SHEET TARGET
         nama_sheet_aman = "Master+2026"
+        csv_url_alt = f"https://google.com{sheet_id}/export?format=csv&sheet={nama_sheet_aman}"
         
-        # PERBAIKAN UTAMA: Jalur URL Ekspor CSV Google Sheets yang benar dan valid
-        csv_url_alt = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&sheet={nama_sheet_aman}"
+        # 1. PERBAIKAN: Baca tanpa skip baris terlebih dahulu untuk deteksi dinamis
+        df_raw = pd.read_csv(csv_url_alt, header=None)
         
-        # Eksekusi penarikan data (skiprows=1 agar Baris 2 menjadi Header)
-        df_db = pd.read_csv(csv_url_alt, skiprows=1)
+        # 2. Cari di baris mana kata "ID" atau "Tujuan Pengiriman" berada
+        header_idx = 0
+        for idx, row in df_raw.iterrows():
+            row_str = row.astype(str).str.strip().tolist()
+            if "ID" in row_str or "Tujuan Pengiriman" in row_str:
+                header_idx = idx
+                break
+                
+        # 3. Baca ulang menggunakan baris header yang tepat hasil deteksi otomatis
+        df_db = pd.read_csv(csv_url_alt, skiprows=header_idx)
         
         # Bersihkan nama kolom dari spasi tidak sengaja
         df_db.columns = df_db.columns.str.strip()
         
+        # 4. Validasi darurat jika kolom yang dibutuhkan tetap tidak ditemukan
+        kolom_wajib = ['ID', 'Tujuan Pengiriman', 'Nama PIC']
+        for col in kolom_wajib:
+            if col not in df_db.columns:
+                # Jika tidak ketemu, buat kolom kosong agar aplikasi tidak langsung crash/galat
+                df_db[col] = ""
+                st.warning(f"⚠️ Kolom '{col}' tidak ditemukan di Google Sheets! Periksa nama kolom Anda.")
+                
         return df_db
     except Exception as e:
         st.error(f"⚠️ Gagal menghubungkan ke Database Google Sheets: {e}")
