@@ -54,7 +54,7 @@ st.caption("Tips: Isi kolom 'Masukkan ID' dan tekan Enter, maka kolom Tujuan dan
 
 if 'tabel_data' not in st.session_state:
     st.session_state.tabel_data = pd.DataFrame([
-        {"Masukkan ID": "", "Jumlah Box": 1, "Tujuan Pengiriman": "", "Operator PIC": ""}
+        {"Masukkan ID": "", "Jumlah Box": 1, "Tujuan Pengiriman": "", "Nama PIC": ""}
     ])
 
 df_edit = st.data_editor(
