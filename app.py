@@ -8,7 +8,7 @@ import requests
 from io import StringIO   
 
 st.set_page_config(page_title="Shipment Cabang", layout="centered")
-st.title("📦 QR Barcode ID Shipment Cabang")
+st.title("📦 QR Barcode ID Cabang 2026")
 
 # PERBAIKAN: Menggunakan ID Dokumen Asli berdasarkan Log Anda
 ID_SHEETS_BARU = "1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4"
