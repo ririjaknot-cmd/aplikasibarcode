@@ -65,7 +65,7 @@ df_edit = st.data_editor(
         "Masukkan ID": st.column_config.TextColumn("Masukkan ID", required=True),
         "Jumlah Box": st.column_config.NumberColumn("Jumlah Box", min_value=1, default=1, required=True),
         "Tujuan Pengiriman": st.column_config.TextColumn("Tujuan Pengiriman", disabled=True),
-        "Operator PIC": st.column_config.TextColumn("Operator PIC", disabled=True)
+        "Nama PIC": st.column_config.TextColumn("Nama PIC", disabled=True)
     },
     key="editor_utama"
 )
@@ -90,9 +90,9 @@ for idx, row in df_proses.iterrows():
             tujuan_terdeteksi = "ID TIDAK DITEMUKAN"
             pic_terdeteksi = "TIDAK DIKETAHUI"
             
-        if str(row["Tujuan Pengiriman"]).strip() != tujuan_terdeteksi or str(row["Operator PIC"]).strip() != pic_terdeteksi:
+        if str(row["Tujuan Pengiriman"]).strip() != tujuan_terdeteksi or str(row["Nama PIC"]).strip() != pic_terdeteksi:
             df_proses.at[idx, "Tujuan Pengiriman"] = tujuan_terdeteksi
-            df_proses.at[idx, "Operator PIC"] = pic_terdeteksi
+            df_proses.at[idx, "Nama PIC"] = pic_terdeteksi
             diubah = True
 
 if diubah:
