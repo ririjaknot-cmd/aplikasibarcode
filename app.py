@@ -101,9 +101,9 @@ if proses_button:
                             margin: 0;
                         }
                         body { 
-                            /* PERBAIKAN FONT CALIBRI DAN UKURAN 11pt */
                             font-family: 'Calibri', Arial, sans-serif; 
-                            font-size: 11pt;
+                            /* DISESUAIKAN: Ukuran font 10pt agar pas di kertas 50mm */
+                            font-size: 10pt;
                             margin: 0; 
                             padding: 0;
                             background: white; 
@@ -126,10 +126,11 @@ if proses_button:
                         }
                         .tombol-print:hover { background-color: #D32F2F; }
                         
+                        /* PERBAIKAN PROPER LAYOUT: Mengatur padding seimbang 4mm */
                         .kotak-label { 
                             width: 50mm;
                             height: 50mm;
-                            padding: 3mm;
+                            padding: 4mm;
                             display: flex;
                             flex-direction: column;
                             justify-content: center;
@@ -138,17 +139,19 @@ if proses_button:
                             box-sizing: border-box;
                             page-break-inside: avoid;
                             page-break-after: always;
+                            overflow: hidden; /* Mencegah teks keluar kertas */
                         }
                         .info-teks { 
-                            margin-top: 4px; 
-                            /* PERBAIKAN LINE SPACING 1.15 */
+                            /* DISESUAIKAN: Memberikan jarak tipis di bawah barcode */
+                            margin-top: 6px; 
                             line-height: 1.15; 
+                            width: 100%;
+                            word-wrap: break-word; /* Memotong kata otomatis jika nama tujuan terlalu panjang */
                         }
-                        /* PERBAIKAN: TEKS TUJUAN PENGIRIMAN DI-BOLD */
                         .tujuan-bold {
                             font-weight: bold;
                         }
-                        /* PERBAIKAN UKURAN BARCODE 1,67cm x 1,67cm */
+                        /* Tetap menggunakan ukuran barcode ideal 1.67cm */
                         img.barcode-qr { 
                             width: 1.67cm; 
                             height: 1.67cm; 
