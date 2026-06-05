@@ -87,36 +87,62 @@ if proses_button:
                 
                 st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
                 st.info(f"**👤 Nama PIC:** {pic_terdeteksi}")
-                
-                # =========================================================================
-                # PEMBUATAN DOKUMEN PREVIEW & TOMBOL PRINT MANUAL
-                # =========================================================================
-                try:
-                    # KODE UTAMA: Desain HTML + Tombol Print Mandiri di dalam dokumen pratinjau
+                                try:
+                    # PERBAIKAN UKURAN KERTAS 50x50mm & KONTEN RATAKAN TENGAH
                     html_konten = """
                     <html>
                     <head>
                     <style>
-                        body { font-family: Arial, sans-serif; margin: 10px; background: white; color: black; }
-                        .area-tombol { margin-bottom: 20px; text-align: center; }
+                        @page {
+                            size: 50mm 50mm;
+                            margin: 0;
+                        }
+                        body { 
+                            font-family: Arial, sans-serif; 
+                            margin: 0; 
+                            padding: 0;
+                            background: white; 
+                            color: black; 
+                            width: 50mm;
+                            height: 50mm;
+                            box-sizing: border-box;
+                        }
+                        .area-tombol { margin: 5px; text-align: center; }
                         .tombol-print { 
                             background-color: #FF4B4B; 
                             color: white; 
                             border: none; 
-                            padding: 12px 30px; 
-                            font-size: 16px; 
+                            padding: 8px; 
+                            font-size: 13px; 
                             font-weight: bold; 
                             border-radius: 4px; 
                             cursor: pointer; 
-                            width: 100%;
+                            width: 90%;
                         }
                         .tombol-print:hover { background-color: #D32F2F; }
-                        .grid-kontainer { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-                        .kotak-label { border: 1px solid #CCCCCC; padding: 10px; text-align: center; border-radius: 4px; page-break-inside: avoid; }
-                        .info-teks { font-size: 11px; text-align: left; margin-top: 5px; line-height: 14px; }
-                        img { width: 100px; height: 100px; }
                         
-                        /* Menyembunyikan tombol cetak saat kertas printer sedang mencetak */
+                        /* Layout Kontainer Utama Label */
+                        .kotak-label { 
+                            width: 50mm;
+                            height: 50mm;
+                            padding: 3mm;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;
+                            text-align: center;
+                            box-sizing: border-box;
+                            page-break-inside: avoid;
+                            page-break-after: always;
+                        }
+                        .info-teks { 
+                            font-size: 10px; 
+                            margin-top: 4px; 
+                            line-height: 13px; 
+                            font-weight: bold;
+                        }
+                        img { width: 30mm; height: 30mm; object-fit: contain; }
+                        
                         @media print { 
                             .no-print { display: none !important; } 
                         }
@@ -124,12 +150,9 @@ if proses_button:
                     </head>
                     <body>
                     
-                    <!-- PERBAIKAN UTAMA: Tombol cetak manual diletakkan di dalam halaman pratinjau -->
                     <div class="area-tombol no-print">
                         <button class="tombol-print" onclick="window.print()">🖨️ Print</button>
                     </div>
-                    
-                    <div class="grid-kontainer">
                     """
                     
                     # Looping pembuatan QR Code berdasarkan jumlah box
@@ -145,25 +168,25 @@ if proses_button:
                         
                         img_base64 = base64.b64encode(fp.read()).decode('utf-8')
                         
+                        # PERBAIKAN KONTEN: Menghapus sub-judul "ID:", "Box:", dan "Tujuan:"
                         html_konten += f"""
                         <div class="kotak-label">
                             <img src="data:image/png;base64,{img_base64}" />
                             <div class="info-teks">
-                                <b>ID:</b> {id_inputan}<br/>
-                                <b>Box:</b> {b} dari {jumlah_box}<br/>
-                                <b>Tujuan:</b> {tujuan_terdeteksi}
+                                {id_inputan}<br/>
+                                {b} dari {jumlah_box}<br/>
+                                {tujuan_terdeteksi}
                             </div>
                         </div>
                         """
                     
-                    # Menutup tag HTML dokumen pratinjau
                     html_konten += """
-                    </div>
                     </body>
                     </html>
                     """
             
                     components.html(html_konten, height=450, scrolling=True)
+
                     
                 except Exception as err:
                     st.error(f"Gagal memproses pratinjau cetak: {err}") # 👈 PERBAIKAN: Melengkapi baris terpotong
