@@ -102,8 +102,8 @@ if proses_button:
                         }
                         body { 
                             font-family: 'Calibri', Arial, sans-serif; 
-                            /* DISESUAIKAN: Ukuran font 10pt agar pas di kertas 50mm */
-                            font-size: 10pt;
+                            /* DIBUAT LEBIH BESAR: Font dasar naik ke 11pt */
+                            font-size: 11pt;
                             margin: 0; 
                             padding: 0;
                             background: white; 
@@ -126,11 +126,11 @@ if proses_button:
                         }
                         .tombol-print:hover { background-color: #D32F2F; }
                         
-                        /* PERBAIKAN PROPER LAYOUT: Mengatur padding seimbang 4mm */
+                        /* LAYOUT COMPACT: Padding dirapatkan ke 2mm agar area cetak maksimal */
                         .kotak-label { 
                             width: 50mm;
                             height: 50mm;
-                            padding: 4mm;
+                            padding: 2mm;
                             display: flex;
                             flex-direction: column;
                             justify-content: center;
@@ -139,22 +139,23 @@ if proses_button:
                             box-sizing: border-box;
                             page-break-inside: avoid;
                             page-break-after: always;
-                            overflow: hidden; /* Mencegah teks keluar kertas */
+                            overflow: hidden;
                         }
                         .info-teks { 
-                            /* DISESUAIKAN: Memberikan jarak tipis di bawah barcode */
-                            margin-top: 6px; 
+                            margin-top: 3px; 
                             line-height: 1.15; 
                             width: 100%;
-                            word-wrap: break-word; /* Memotong kata otomatis jika nama tujuan terlalu panjang */
+                            word-wrap: break-word;
                         }
+                        /* DIBUAT LEBIH BESAR: Nama tujuan menonjol di ukuran 13pt */
                         .tujuan-bold {
                             font-weight: bold;
+                            font-size: 13pt;
                         }
-                        /* Tetap menggunakan ukuran barcode ideal 1.67cm */
+                        /* DIBUAT LEBIH BESAR: Ukuran QR Code dinaikkan dari 1.67cm menjadi 2.3cm */
                         img.barcode-qr { 
-                            width: 1.67cm; 
-                            height: 1.67cm; 
+                            width: 2.3cm; 
+                            height: 2.3cm; 
                             object-fit: contain; 
                         }
                         
