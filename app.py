@@ -208,4 +208,4 @@ if proses_button:
                     st.error(f"Gagal memproses pratinjau cetak: {err}") # 👈 PERBAIKAN: Melengkapi baris terpotong
             else:
                 # Kondisi jika ID yang dicari tidak ada di database Google Sheets
-                st.error(f"❌ ID '{id_inputan}' TIDAK DITEMUKAN di dalam Database Google Sheets!")
+                st.error(f"❌ ID '{id_inputan}' TIDAK DITEMUKAN pada Database Google Sheets!")
