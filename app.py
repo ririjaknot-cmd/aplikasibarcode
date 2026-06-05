@@ -92,7 +92,6 @@ if proses_button:
                 # PEMBUATAN DOKUMEN PREVIEW & TOMBOL PRINT MANUAL
                 # =========================================================================
                 try:
-                    # PERBAIKAN UKURAN KERTAS 50x50mm & KONTEN RATAKAN TENGAH
                     html_konten = """
                     <html>
                     <head>
@@ -102,7 +101,9 @@ if proses_button:
                             margin: 0;
                         }
                         body { 
-                            font-family: Arial, sans-serif; 
+                            /* PERBAIKAN FONT CALIBRI DAN UKURAN 11pt */
+                            font-family: 'Calibri', Arial, sans-serif; 
+                            font-size: 11pt;
                             margin: 0; 
                             padding: 0;
                             background: white; 
@@ -125,7 +126,6 @@ if proses_button:
                         }
                         .tombol-print:hover { background-color: #D32F2F; }
                         
-                        /* Layout Kontainer Utama Label */
                         .kotak-label { 
                             width: 50mm;
                             height: 50mm;
@@ -140,12 +140,20 @@ if proses_button:
                             page-break-after: always;
                         }
                         .info-teks { 
-                            font-size: 10px; 
                             margin-top: 4px; 
-                            line-height: 13px; 
+                            /* PERBAIKAN LINE SPACING 1.15 */
+                            line-height: 1.15; 
+                        }
+                        /* PERBAIKAN: TEKS TUJUAN PENGIRIMAN DI-BOLD */
+                        .tujuan-bold {
                             font-weight: bold;
                         }
-                        img { width: 30mm; height: 30mm; object-fit: contain; }
+                        /* PERBAIKAN UKURAN BARCODE 1,67cm x 1,67cm */
+                        img.barcode-qr { 
+                            width: 1.67cm; 
+                            height: 1.67cm; 
+                            object-fit: contain; 
+                        }
                         
                         @media print { 
                             .no-print { display: none !important; } 
@@ -172,19 +180,20 @@ if proses_button:
                         
                         img_base64 = base64.b64encode(fp.read()).decode('utf-8')
                         
-                        # PERBAIKAN KONTEN: Menghapus sub-judul "ID:", "Box:", dan "Tujuan:"
+                        # PERBAIKAN KONTEN: Menambahkan class tujuan-bold pada teks tujuan pengiriman
                         html_konten += f"""
                         <div class="kotak-label">
-                            <img src="data:image/png;base64,{img_base64}" />
+                            <img class="barcode-qr" src="data:image/png;base64,{img_base64}" />
                             <div class="info-teks">
-                                {tujuan_terdeteksi}<br/>
                                 {id_inputan}<br/>
-                                {b}/{jumlah_box}
+                                {b} dari {jumlah_box}<br/>
+                                <span class="tujuan-bold">{tujuan_terdeteksi}</span>
                             </div>
                         </div>
                         """
                     
                     html_konten += """
+                    </div>
                     </body>
                     </html>
                     """
