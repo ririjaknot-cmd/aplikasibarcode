@@ -53,10 +53,10 @@ df_database = muat_database()
 # TAMPILAN FORMULIR INPUT VERTIKAL (MENURUN)
 # =========================================================================
 st.subheader("📝 Formulir Input ID")
-st.caption("Tips: Masukkan ID, tekan Tab untuk pindah ke Jumlah Box, lalu tekan Enter.")
+st.caption("Tips: Masukkan ID, tekan Tab/Enter untuk pindah ke Jumlah Box. Validasi dilakukan dengan menekan tombol di bawah.")
 
-# Form dibuat vertikal menurun ke bawah
-with st.form(key="form_vertikal_shipment"):
+# PERBAIKAN: Menambahkan enter_to_submit=False agar Enter tidak langsung mengirim data
+with st.form(key="form_vertikal_shipment", enter_to_submit=False):
     # 1. Baris Pertama: Input ID
     id_inputan = st.text_input("Masukkan ID", value="").strip().replace('.0', '')
     
