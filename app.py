@@ -178,7 +178,7 @@ if proses_button:
                             <img src="data:image/png;base64,{img_base64}" />
                             <div class="info-teks">
                                 {id_inputan}<br/>
-                                {b} dari {jumlah_box}<br/>
+                                {b}/{jumlah_box}<br/>
                                 {tujuan_terdeteksi}
                             </div>
                         </div>
