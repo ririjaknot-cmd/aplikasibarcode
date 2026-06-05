@@ -162,8 +162,7 @@ if proses_button:
                     </body>
                     </html>
                     """
-                    
-                    st.subheader("🖨️ Pratinjau Lembar Cetak")
+            
                     components.html(html_konten, height=450, scrolling=True)
                     
                 except Exception as err:
