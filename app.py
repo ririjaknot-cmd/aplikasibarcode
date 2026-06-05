@@ -53,14 +53,14 @@ df_database = muat_database()
 # TAMPILAN FORMULIR INPUT VERTIKAL (MENURUN)
 # =========================================================================
 st.subheader("📝 Formulir Input ID")
-st.caption("Tips: Masukkan ID, tekan Tab untuk pindah ke Jumlah Box. Setelah isi Jumlah Box, tekan Enter untuk Validasi.")
+st.caption("Tips: Masukkan ID, tekan Tab untuk pindah ke Jumlah Box, lalu tekan Enter.")
 
-# PERBAIKAN: Menghapus enter_to_submit=False agar tombol Enter kembali aktif sebagai pengirim form
+# Form dibuat vertikal menurun ke bawah
 with st.form(key="form_vertikal_shipment"):
     # 1. Baris Pertama: Input ID
     id_inputan = st.text_input("Masukkan ID", value="").strip().replace('.0', '')
     
-    # 2. Baris Kedua: Input Jumlah Box (Kondisi Awal Kosong)
+    # 2. Baris Kedua: Input Jumlah Box (DIUBAH AGAR DI AWAL KOSONG)
     jumlah_box = st.number_input("Jumlah Box", min_value=1, value=None, step=1)
     
     # Tombol submit form (Memproses data ke layar tanpa langsung memicu print)
