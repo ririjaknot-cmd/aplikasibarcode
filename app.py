@@ -64,12 +64,12 @@ with st.form(key="form_vertikal_shipment"):
     jumlah_box = st.number_input("Jumlah Box", min_value=1, value=None, step=1)
     
     # Tombol submit form (Memproses data ke layar tanpa langsung memicu print)
-    proses_button = st.form_submit_button(label="🔍 Cek & Validasi Data", type="primary", use_container_width=True)
+    proses_button = st.form_submit_button(label="🔍 Cek & Validasi ID", type="primary", use_container_width=True)
 
 # Logika pemrosesan setelah tombol ditekan atau pengguna menekan Enter
 if proses_button:
     if id_inputan == "":
-        st.error("Silakan isi data ID terlebih dahulu!")
+        st.error("Silakan isi Nomor ID terlebih dahulu!")
     elif jumlah_box is None:
         st.error("Silakan isi Jumlah Box terlebih dahulu!")
     else:
@@ -83,7 +83,7 @@ if proses_button:
                 pic_terdeteksi = str(pencarian.iloc[0]['Nama PIC']).strip()
                 
                 # Menampilkan Informasi Data Secara Vertikal untuk dibaca pengguna
-                st.success("✅ Data Berhasil Ditemukan! Silakan baca data sebelum mencetak.")
+                st.success("✅ Data Berhasil Ditemukan! Pastikan Data Sudah Sesuai.")
                 
                 st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
                 st.info(f"**👤 Nama PIC:** {pic_terdeteksi}")
@@ -126,7 +126,7 @@ if proses_button:
                     
                     <!-- PERBAIKAN UTAMA: Tombol cetak manual diletakkan di dalam halaman pratinjau -->
                     <div class="area-tombol no-print">
-                        <button class="tombol-print" onclick="window.print()">🖨️ KLIK DI SINI UNTUK CETAK SEKARANG</button>
+                        <button class="tombol-print" onclick="window.print()">🖨️ Print</button>
                     </div>
                     
                     <div class="grid-kontainer">
@@ -164,7 +164,6 @@ if proses_button:
                     """
                     
                     st.subheader("🖨️ Pratinjau Lembar Cetak")
-                    st.caption("Tinjau QR Code di bawah ini. Klik tombol merah di dalam kotak pratinjau untuk mencetak.")
                     components.html(html_konten, height=450, scrolling=True)
                     
                 except Exception as err:
