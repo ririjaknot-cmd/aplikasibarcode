@@ -180,14 +180,14 @@ if proses_button:
                         
                         img_base64 = base64.b64encode(fp.read()).decode('utf-8')
                         
-                        # PERBAIKAN KONTEN: Menambahkan class tujuan-bold pada teks tujuan pengiriman
+                        # PERBAIKAN STRUKTUR URUTAN TEKS & FORMAT BOX (X/X)
                         html_konten += f"""
                         <div class="kotak-label">
                             <img class="barcode-qr" src="data:image/png;base64,{img_base64}" />
                             <div class="info-teks">
+                                <span class="tujuan-bold">{tujuan_terdeteksi}</span><br/>
                                 {id_inputan}<br/>
-                                {b} dari {jumlah_box}<br/>
-                                <span class="tujuan-bold">{tujuan_terdeteksi}</span>
+                                {b}/{jumlah_box}
                             </div>
                         </div>
                         """
