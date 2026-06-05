@@ -87,7 +87,7 @@ if proses_button:
                 
                 st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
                 st.info(f"**👤 Nama PIC:** {pic_terdeteksi}")
-                     try:
+            try:
                     # PERBAIKAN UKURAN KERTAS 50x50mm & KONTEN RATAKAN TENGAH
                     html_konten = """
                     <html>
