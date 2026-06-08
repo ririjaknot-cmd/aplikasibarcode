@@ -86,8 +86,8 @@ if proses_button:
                 st.session_state.data_tervalidasi = {
                     "id_inputan": id_inputan,
                     "jumlah_box": int(jumlah_box),
-                    "tujuan": str(pencarian.iloc['Tujuan Pengiriman']).strip(),
-                    "pic": str(pencarian.iloc['Nama PIC']).strip(),
+                    "tujuan": str(pencarian.iloc[0]['Tujuan Pengiriman']).strip(),
+                    "pic": str(pencarian.iloc[0]['Nama PIC']).strip(),
                     "waktu_cetak": waktu_sekarang
                 }
             else:
