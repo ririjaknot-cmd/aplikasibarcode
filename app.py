@@ -59,7 +59,7 @@ with st.form(key="form_vertikal_shipment", enter_to_submit=False):
     id_inputan = st.text_input("Masukkan ID", value="").strip().replace('.0', '')
     
     
-    jumlah_box = st.number_input("Jumlah Box", min_value=1, value=None, step=1)
+    jumlah_box = st.number_input("Jumlah Box", min_value=1, value=1, step=1)
     
     
     proses_button = st.form_submit_button(label="🔍 Cek & Validasi ID", type="primary", use_container_width=True)
@@ -84,7 +84,7 @@ if proses_button:
                 st.success("✅ Data Berhasil Ditemukan! Pastikan Data Sudah Sesuai.")
                 
                 st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
-                st.info(f"**🤴 Nama PIC:** {pic_terdeteksi}")
+                st.info(f"**🐓 Nama PIC:** {pic_terdeteksi}")
                 
                
                 try:
