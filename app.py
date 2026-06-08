@@ -86,7 +86,7 @@ if proses_button:
                 st.success("✅ Data Berhasil Ditemukan! Pastikan Data Sudah Sesuai.")
                 
                 st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
-                st.info(f"**:🧞‍♂️ Nama PIC:** {pic_terdeteksi}")
+                st.info(f"**🧞‍♂️ Nama PIC:** {pic_terdeteksi}")
                 
                 # =========================================================================
                 # PEMBUATAN DOKUMEN PREVIEW & TOMBOL PRINT MANUAL
@@ -112,17 +112,23 @@ if proses_button:
                             height: 50mm;
                             box-sizing: border-box;
                         }
-                        .area-tombol { margin: 5px; text-align: center; }
+                        .area-tombol { 
+                        margin: 10px 0;
+                        display: flex;
+                        justify-content: center;
+                        width: 100%;
+                        }
                         .tombol-print { 
                             background-color: #FF4B4B; 
                             color: white; 
                             border: none; 
-                            padding: 8px; 
+                            padding: 8px 16px; 
                             font-size: 13px; 
                             font-weight: bold; 
                             border-radius: 4px; 
                             cursor: pointer; 
-                            width: 90%;
+                            width: auto;
+                            min-width: 120px;
                         }
                         .tombol-print:hover { background-color: #D32F2F; }
                         
