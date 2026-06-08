@@ -61,7 +61,7 @@ with st.form(key="form_vertikal_shipment", enter_to_submit=False):
     id_inputan = st.text_input("Masukkan ID", value="").strip().replace('.0', '')
     
     # 2. Baris Kedua: Input Jumlah Box (Kondisi Awal Kosong)
-    jumlah_box = st.number_input("Jumlah Box", min_value=1, value=None, step=1)
+    jumlah_box = st.number_input("Jumlah Box", min_value=1, value=0, step=1)
     
     # Tombol submit form (Memproses data ke layar tanpa langsung memicu print)
     proses_button = st.form_submit_button(label="🔍 Cek & Validasi ID", type="primary", use_container_width=True)
