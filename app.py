@@ -86,7 +86,7 @@ if proses_button:
                 st.success("✅ Data Berhasil Ditemukan! Pastikan Data Sudah Sesuai.")
                 
                 st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
-                st.info(f"**🤴 Nama PIC:** {pic_terdeteksi}")
+                st.info(f"**:🧞‍♂️ Nama PIC:** {pic_terdeteksi}")
                 
                 # =========================================================================
                 # PEMBUATAN DOKUMEN PREVIEW & TOMBOL PRINT MANUAL
