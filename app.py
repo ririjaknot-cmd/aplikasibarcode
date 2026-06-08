@@ -255,6 +255,3 @@ if st.session_state.data_tervalidasi:
                     
                 except Exception as err:
                     st.error(f"Gagal memproses pratinjau cetak: {err}") 
-            else:
-                
-                st.error(f"❌ ID '{id_inputan}' TIDAK DITEMUKAN pada Database Google Sheets!")
