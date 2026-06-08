@@ -231,7 +231,7 @@ for b in range(1, data['jumlah_box'] + 1):
     
     img_base64 = base64.b64encode(fp.read()).decode('utf-8')
     
-    html_konten += f"""
+    html_konten = f"""
     <div class="kotak-label">
         <img class="barcode-qr" src="data:image/png;base64,{img_base64}" />
         <div class="info-teks">
@@ -243,7 +243,7 @@ for b in range(1, data['jumlah_box'] + 1):
     </div>
     """
            
-                    html_konten += """
+                    html_konten = """
                     </div>
                     </body>
                     </html>
