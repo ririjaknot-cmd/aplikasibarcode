@@ -88,112 +88,84 @@ if proses_button:
                 
                
                 try:
-        html_konten = """
-        <html>
-        <head>
-        <style>
-            @page {
-                size: 50mm 50mm;
-                margin: 0;
-            }
-            body { 
-                font-family: 'Calibri', Arial, sans-serif; 
-                font-size: 11pt;
-                margin: 0; 
-                padding: 0;
-                background: #f9f9f9; 
-                color: black; 
-                box-sizing: border-box;
-            }
-            /* Menengahkan area tombol cetak */
-            .area-tombol { 
-                margin: 15px 0; 
-                display: flex;
-                justify-content: center;
-                width: 100%;
-            }
-            .tombol-print { 
-                background-color: #FF4B4B; 
-                color: white; 
-                border: none; 
-                padding: 10px 20px; 
-                font-size: 14px; 
-                font-weight: bold; 
-                border-radius: 4px; 
-                cursor: pointer; 
-                min-width: 150px;
-                box-shadow: 0px 2px 5px rgba(0,0,0,0.15);
-            }
-            .tombol-print:hover { background-color: #D32F2F; }
-            
-            /* GRID PREVIEW: Menyusun label rapi ke arah kanan jika berjumlah banyak */
-            .wrapper-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(50mm, 1fr));
-                gap: 15px;
-                padding: 15px;
-                justify-items: center;
-            }
-            
-            /* KOTAK LABEL: Visualisasi potongan kertas di layar aplikasi */
-            .kotak-label { 
-                width: 50mm;
-                height: 50mm;
-                padding: 2mm;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                text-align: center;
-                box-sizing: border-box;
-                background: white;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                box-shadow: 0px 2px 4px rgba(0,0,0,0.05);
-            }
-            .info-teks { 
-                margin-top: 3px; 
-                line-height: 1.15; 
-                width: 100%;
-                word-wrap: break-word;
-            }
-            .tujuan-bold {
-                font-weight: bold;
-                font-size: 13pt;
-            }
-            img.barcode-qr { 
-                width: 2.3cm; 
-                height: 2.3cm; 
-                object-fit: contain; 
-            }
-            
-            /* ATURAN SAAT DICETAK: Menghapus layout grid, bayangan, dan border */
-            @media print { 
-                .no-print { display: none !important; } 
-                body { background: white; }
-                .wrapper-grid { 
-                    display: block !important; 
-                    padding: 0 !important; 
-                    gap: 0 !important; 
-                }
-                .kotak-label { 
-                    border: none !important; 
-                    box-shadow: none !important; 
-                    border-radius: 0 !important;
-                    page-break-inside: avoid !important;
-                    page-break-after: always !important;
-                }
-            }
-        </style>
-        </head>
-        <body>
-        
-        <div class="area-tombol no-print">
-            <button class="tombol-print" onclick="window.print()">🖨️ Print</button>
-        </div>
-
-        <div class="wrapper-grid">
-        """
+                    html_konten = """
+                    <html>
+                    <head>
+                    <style>
+                        @page {
+                            size: 50mm 50mm;
+                            margin: 0;
+                        }
+                        body { 
+                            font-family: 'Calibri', Arial, sans-serif; 
+                            /* DIBUAT LEBIH BESAR: Font dasar naik ke 11pt */
+                            font-size: 11pt;
+                            margin: 0; 
+                            padding: 0;
+                            background: white; 
+                            color: black; 
+                            width: 50mm;
+                            height: 50mm;
+                            box-sizing: border-box;
+                        }
+                        .area-tombol { margin: 5px; text-align: center; }
+                        .tombol-print { 
+                            background-color: #FF4B4B; 
+                            color: white; 
+                            border: none; 
+                            padding: 8px; 
+                            font-size: 13px; 
+                            font-weight: bold; 
+                            border-radius: 4px; 
+                            cursor: pointer; 
+                            width: 90%;
+                        }
+                        .tombol-print:hover { background-color: #D32F2F; }
+                        
+                        /* LAYOUT COMPACT: Padding dirapatkan ke 2mm agar area cetak maksimal */
+                        .kotak-label { 
+                            width: 50mm;
+                            height: 50mm;
+                            padding: 2mm;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;
+                            text-align: center;
+                            box-sizing: border-box;
+                            page-break-inside: avoid;
+                            page-break-after: always;
+                            overflow: hidden;
+                        }
+                        .info-teks { 
+                            margin-top: 3px; 
+                            line-height: 1.15; 
+                            width: 100%;
+                            word-wrap: break-word;
+                        }
+                        /* DIBUAT LEBIH BESAR: Nama tujuan menonjol di ukuran 13pt */
+                        .tujuan-bold {
+                            font-weight: bold;
+                            font-size: 13pt;
+                        }
+                        /* DIBUAT LEBIH BESAR: Ukuran QR Code dinaikkan dari 1.67cm menjadi 2.3cm */
+                        img.barcode-qr { 
+                            width: 2.3cm; 
+                            height: 2.3cm; 
+                            object-fit: contain; 
+                        }
+                        
+                        @media print { 
+                            .no-print { display: none !important; } 
+                        }
+                    </style>
+                    </head>
+                    <body>
+                    
+                    <div class="area-tombol no-print">
+                        <button class="tombol-print" onclick="window.print()">🖨️ Print</button>
+                    </div>
+                    """
                     
                     
                     for b in range(1, int(jumlah_box) + 1):
