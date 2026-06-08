@@ -219,32 +219,30 @@ if st.session_state.data_tervalidasi:
                     """
                     
                     
-                    for b in range(1, int(jumlah_box) + 1):
-                        qr = qrcode.QRCode(version=1, box_size=10, border=1)
-                        qr.add_data(id_inputan)
-                        qr.make(fit=True)
-                        img_qr = qr.make_image(fill_color="black", back_color="white")
-                        
-                        fp = io.BytesIO()
-                        img_qr.save(fp, format="PNG")
-                        fp.seek(0)
-                        
-                        img_base64 = base64.b64encode(fp.read()).decode('utf-8')
-                        
-                        
-                        html_konten += f"""
-                        <div class="kotak-label">
-                            <img class="barcode-qr" src="data:image/png;base64,{img_base64}" />
-                            <div class="info-teks">
-                                <span class="tujuan-bold">{tujuan_terdeteksi}</span><br/>
-                                {id_inputan}<br/>
-                                {b}/{jumlah_box}
-                            </div>
-                            <!-- Baris Teks Waktu Cetak Real-time -->
-                            <div class="waktu-cetak">{data['waktu_cetak']}</div>
-                        </div>
-                        """
-                    
+for b in range(1, data['jumlah_box'] + 1):
+    qr = qrcode.QRCode(version=1, box_size=10, border=1)
+    qr.add_data(data['id_inputan']) # <--- Pastikan menggunakan data['id_inputan']
+    qr.make(fit=True)
+    img_qr = qr.make_image(fill_color="black", back_color="white")
+    
+    fp = io.BytesIO()
+    img_qr.save(fp, format="PNG")
+    fp.seek(0)
+    
+    img_base64 = base64.b64encode(fp.read()).decode('utf-8')
+    
+    html_konten += f"""
+    <div class="kotak-label">
+        <img class="barcode-qr" src="data:image/png;base64,{img_base64}" />
+        <div class="info-teks">
+            <span class="tujuan-bold">{data['tujuan']}</span><br/> <!-- UBAH DI SINI -->
+            {data['id_inputan']}<br/>                     <!-- UBAH DI SINI -->
+            {b}/{data['jumlah_box']}
+        </div>
+        <div class="waktu-cetak">{data['waktu_cetak']}</div>
+    </div>
+    """
+           
                     html_konten += """
                     </div>
                     </body>
