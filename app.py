@@ -1,3 +1,5 @@
+from datetime import datetime
+import pytz
 import streamlit as st
 import pandas as pd
 import qrcode
@@ -85,8 +87,9 @@ if proses_button:
                 
                 st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
                 st.info(f"**👻Nama PIC:** {pic_terdeteksi}")
+                tz_wib = pytz.timezone('Asia/Jakarta')
+                waktu_sekarang = datetime.now(tz_wib).strftime('%d/%m/%Y %I:%M %p')
                 
-               
                 try:
                     html_konten = """
                     <html>
@@ -126,10 +129,10 @@ if proses_button:
                         .kotak-label { 
                             width: 50mm;
                             height: 50mm;
-                            padding: 2mm;
+                            padding: 1.5mm;
                             display: flex;
                             flex-direction: column;
-                            justify-content: center;
+                            justify-content: flex-start;
                             align-items: center;
                             text-align: center;
                             box-sizing: border-box;
@@ -142,6 +145,13 @@ if proses_button:
                             line-height: 1.15; 
                             width: 100%;
                             word-wrap: break-word;
+                        }
+                        .timestamp-cetak {
+                        margin-top: auto;
+                        font-size: 7.5pt;
+                        color: #555555;
+                        width: 100%;
+                        padding-bottom: 0.5mm;
                         }
                         /* DIBUAT LEBIH BESAR: Nama tujuan menonjol di ukuran 13pt */
                         .tujuan-bold {
@@ -189,6 +199,7 @@ if proses_button:
                                 {id_inputan}<br/>
                                 {b}/{jumlah_box}
                             </div>
+                            <div class="timestamp-cetak">{waktu_sekarang} WIB</div>
                         </div>
                         """
                     
