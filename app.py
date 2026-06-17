@@ -199,7 +199,7 @@ if proses_button:
                                 {id_inputan}<br/>
                                 {b}/{jumlah_box}
                             </div>
-                            <div class="timestamp-cetak">{waktu_sekarang} WIB</div>
+                            <div class="timestamp-cetak">{waktu_sekarang}</div>
                         </div>
                         """
                     
