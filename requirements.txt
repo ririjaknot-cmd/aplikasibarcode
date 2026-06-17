@@ -2,4 +2,5 @@ streamlit
 pandas
 qrcode
 requests
+pytz
 pillow
