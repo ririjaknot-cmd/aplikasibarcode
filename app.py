@@ -129,7 +129,7 @@ if proses_button:
                         .kotak-label { 
                             width: 50mm;
                             height: 50mm;
-                            padding: 2mm;
+                            padding: 3.5mm 1.5mm 1.5mm 1.5mm;
                             display: flex;
                             flex-direction: column;
                             justify-content: flex-start;
