@@ -194,7 +194,7 @@ if proses_button:
                         html_konten += f"""
                         <div class="kotak-label">
                             <img class="barcode-qr" src="data:image/png;base64,{img_base64}" />
-                            <div cla ss="info-teks">
+                            <div class="info-teks">
                                 <span class="tujuan-bold">{tujuan_terdeteksi}</span><br/>
                                 {id_inputan}<br/>
                                 {b}/{jumlah_box}
@@ -204,8 +204,7 @@ if proses_button:
                         """
                     
                     html_konten += """
-                    </div>
-                    </body>
+                    >
                     </html>
                     """
             
