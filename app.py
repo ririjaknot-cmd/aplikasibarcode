@@ -56,7 +56,7 @@ st.subheader("📝 Formulir Input ID")
 st.caption("Tips: Masukkan ID, tekan Tab untuk pindah ke Jumlah Box. Validasi dilakukan dengan menekan tombol di bawah.")
 
 
-
+with st.form(key="form_vertikal_shipment", enter_to_submit=False):
     
     id_inputan = st.text_input("Masukkan ID", value="").strip().replace('.0', '')
     
@@ -86,7 +86,7 @@ if proses_button:
                 st.success("✅ Data Berhasil Ditemukan! Pastikan Data Sudah Sesuai.")
                 
                 st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
-                st.info(f"**👩‍🚀Nama PIC:** {pic_terdeteksi}")
+                st.info(f"**👻Nama PIC:** {pic_terdeteksi}")
                 tz_wib = pytz.timezone('Asia/Jakarta')
                 waktu_sekarang = datetime.now(tz_wib).strftime('%d/%m/%Y %I:%M %p')
                 
@@ -204,7 +204,8 @@ if proses_button:
                         """
                     
                     html_konten += """
-                    >
+                    </div>
+                    </body>
                     </html>
                     """
             
