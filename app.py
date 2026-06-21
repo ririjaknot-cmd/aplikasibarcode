@@ -86,7 +86,7 @@ if proses_button:
                 st.success("✅ Data Berhasil Ditemukan! Pastikan Data Sudah Sesuai.")
                 
                 st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
-                st.info(f"**👻Nama PIC:** {pic_terdeteksi}")
+                st.info(f"**Nama PIC:**👽{pic_terdeteksi}")
                 tz_wib = pytz.timezone('Asia/Jakarta')
                 waktu_sekarang = datetime.now(tz_wib).strftime('%d/%m/%Y %I:%M %p')
                 
