@@ -6,7 +6,7 @@ import qrcode
 import io
 import base64
 import streamlit.components.v1 as components
-import requests         
+import requests
 from io import StringIO   
 
 st.set_page_config(page_title="Shipment Cabang", layout="centered")
