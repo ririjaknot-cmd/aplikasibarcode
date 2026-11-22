@@ -89,7 +89,7 @@ if proses_button:
 
                 try:
                     baris_terupdate = kirim_jumlah_box_ke_kolom_n(id_inputan, jumlah_box_int)
-                except Exception as err_sheet:
+                pass
 
                 st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
                 st.info(f"**👻Nama PIC:** {pic_terdeteksi}")
