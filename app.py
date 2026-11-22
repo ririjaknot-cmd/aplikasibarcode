@@ -15,7 +15,7 @@ st.title("📦 QR Barcode ID Cabang 2026")
 
 ID_SHEETS_BARU = "1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4"
 URL_EKSPOR_LANGSUNG = f"https://docs.google.com/spreadsheets/d/{ID_SHEETS_BARU}/export?format=csv"
-URL_APPS_SCRIPT_WEB_APP = "https://script.google.com/macros/s/AKfycbyp4nu4WzYoUGwDNWFRWSDBXpbbbpZoaEIwMrMsyQRQx40vlBpTfVHXMrN0VTko46rgYw/exec"
+URL_APPS_SCRIPT_WEB_APP = "https://script.google.com/macros/s/AKfycbx-UhjHLKwAacdwXHvRPz8fzwdmdD-mTdxxrzbtZZcFtE2RFOrFIniDki_KfjbFFIJWYA/exec"
 
 
 @st.cache_data(ttl=60, show_spinner=False)
