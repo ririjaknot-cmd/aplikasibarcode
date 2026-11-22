@@ -89,9 +89,7 @@ if proses_button:
 
                 try:
                     baris_terupdate = kirim_jumlah_box_ke_kolom_n(id_inputan, jumlah_box_int)
-                    st.success(f"✅ Data Berhasil Ditemukan & Jumlah Box ({jumlah_box_int}) tersimpan di Kolom N (Baris {baris_terupdate})!")
                 except Exception as err_sheet:
-                    st.warning(f"⚠️ Data ditemukan, namun gagal memperbarui Kolom N: {err_sheet}")
 
                 st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
                 st.info(f"**👻Nama PIC:** {pic_terdeteksi}")
