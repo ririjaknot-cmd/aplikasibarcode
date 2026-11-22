@@ -5,6 +5,7 @@ import pandas as pd
 import qrcode
 import io
 import base64
+import threading
 import streamlit.components.v1 as components
 import requests
 from io import StringIO
@@ -14,12 +15,13 @@ st.title("📦 QR Barcode ID Cabang 2026")
 
 ID_SHEETS_BARU = "1CiU5sn37F_GQ0Ma6oC2yyQ6Pa1ce8cMN4MG26zjO4L4"
 URL_EKSPOR_LANGSUNG = f"https://docs.google.com/spreadsheets/d/{ID_SHEETS_BARU}/export?format=csv"
-URL_APPS_SCRIPT_WEB_APP = "https://script.google.com/macros/s/AKfycbxSwzs3nTLF3dzcMMi81qQy7kSm6SiRyr-M8-X7Q2ehrQZzql_AA6mpZRbKxe5GIso1Vg/exec"
+URL_APPS_SCRIPT_WEB_APP = "MASUKKAN_URL_WEB_APP_GOOGLE_APPS_SCRIPT_ANDA_DI_SINI"
 
 
+@st.cache_data(ttl=60, show_spinner=False)
 def muat_database():
     try:
-        respon = requests.get(URL_EKSPOR_LANGSUNG, timeout=10)
+        respon = requests.get(URL_EKSPOR_LANGSUNG, timeout=8)
         respon.raise_for_status()
 
         df_raw = pd.read_csv(StringIO(respon.text), header=None)
@@ -40,26 +42,46 @@ def muat_database():
                 df_db[col] = ""
                 st.warning(f"⚠️ Kolom '{col}' tidak ditemukan! Nama kolom yang ada saat ini: {list(df_db.columns[:4])}")
 
+        df_db['ID_STR'] = df_db['ID'].astype(str).str.strip().str.replace('.0', '', regex=False)
         return df_db
     except Exception as e:
         st.error(f"⚠️ Gagal terhubung ke Google Sheets: {e}")
-        return pd.DataFrame(columns=['ID', 'Tujuan Pengiriman', 'Nama PIC'])
+        return pd.DataFrame(columns=['ID', 'Tujuan Pengiriman', 'Nama PIC', 'ID_STR'])
 
 
-def kirim_jumlah_box_ke_kolom_n(id_target: str, jumlah_box_baru: int):
+def _kirim_ke_kolom_n_worker(id_target: str, jumlah_box_baru: int):
     if not URL_APPS_SCRIPT_WEB_APP or "MASUKKAN_URL_WEB_APP" in URL_APPS_SCRIPT_WEB_APP:
-        raise ValueError("URL Web App Google Apps Script belum diisi.")
+        return
+    try:
+        requests.post(
+            URL_APPS_SCRIPT_WEB_APP,
+            json={"id": id_target, "jumlah_box": int(jumlah_box_baru)},
+            timeout=15
+        )
+    except Exception:
+        pass
 
-    respon = requests.post(
-        URL_APPS_SCRIPT_WEB_APP,
-        json={"id": id_target, "jumlah_box": int(jumlah_box_baru)},
-        timeout=15
+
+def kirim_jumlah_box_async(id_target: str, jumlah_box_baru: int):
+    thread = threading.Thread(
+        target=_kirim_ke_kolom_n_worker,
+        args=(id_target, jumlah_box_baru),
+        daemon=True
     )
-    respon.raise_for_status()
-    hasil = respon.json()
-    if hasil.get("status") != "success":
-        raise ValueError(hasil.get("message", "Gagal mengupdate kolom N."))
-    return hasil.get("row")
+    thread.start()
+
+
+@st.cache_data(show_spinner=False)
+def buat_qr_base64(data_teks: str) -> str:
+    qr = qrcode.QRCode(version=1, box_size=10, border=1)
+    qr.add_data(data_teks)
+    qr.make(fit=True)
+    img_qr = qr.make_image(fill_color="black", back_color="white")
+
+    fp = io.BytesIO()
+    img_qr.save(fp, format="PNG")
+    fp.seek(0)
+    return base64.b64encode(fp.read()).decode('utf-8')
 
 
 df_database = muat_database()
@@ -78,140 +100,129 @@ if proses_button:
     elif jumlah_box is None:
         st.error("Silakan isi Jumlah Box terlebih dahulu!")
     else:
-        with st.spinner("Mencari data ke database..."):
-            df_database['ID_STR'] = df_database['ID'].astype(str).str.strip().str.replace('.0', '', regex=False)
-            pencarian = df_database[df_database['ID_STR'] == id_inputan]
+        pencarian = df_database[df_database['ID_STR'] == id_inputan]
 
-            if not pencarian.empty:
-                tujuan_terdeteksi = str(pencarian.iloc[0]['Tujuan Pengiriman']).strip()
-                pic_terdeteksi = str(pencarian.iloc[0]['Nama PIC']).strip()
-                jumlah_box_int = int(jumlah_box)
+        if not pencarian.empty:
+            tujuan_terdeteksi = str(pencarian.iloc[0]['Tujuan Pengiriman']).strip()
+            pic_terdeteksi = str(pencarian.iloc[0]['Nama PIC']).strip()
+            jumlah_box_int = int(jumlah_box)
 
-                try:
-                    baris_terupdate = kirim_jumlah_box_ke_kolom_n(id_inputan, jumlah_box_int)
-                except:   
-                    pass
+            # Kirim ke Kolom N di latar belakang tanpa memblokir tampilan cetak
+            kirim_jumlah_box_async(id_inputan, jumlah_box_int)
 
-                st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
-                st.info(f"**👻Nama PIC:** {pic_terdeteksi}")
-                tz_wib = pytz.timezone('Asia/Jakarta')
-                waktu_sekarang = datetime.now(tz_wib).strftime('%d/%m/%Y %I:%M %p')
+            st.success("✅ Data Berhasil Ditemukan! Pastikan Data Sudah Sesuai.")
+            st.info(f"**📍 Tujuan Pengiriman:** {tujuan_terdeteksi}")
+            st.info(f"**👻Nama PIC:** {pic_terdeteksi}")
 
-                try:
-                    html_konten = """
-                    <html>
-                    <head>
-                    <style>
-                        @page {
-                            size: 50mm 50mm;
-                            margin: 0;
-                        }
-                        body { 
-                            font-family: 'Calibri', Arial, sans-serif; 
-                            font-size: 11pt;
-                            margin: 0; 
-                            padding: 0;
-                            background: white; 
-                            color: black; 
-                            width: 50mm;
-                            height: 50mm;
-                            box-sizing: border-box;
-                        }
-                        .area-tombol { margin: 5px; text-align: center; }
-                        .tombol-print { 
-                            background-color: #FF4B4B; 
-                            color: white; 
-                            border: none; 
-                            padding: 8px; 
-                            font-size: 13px; 
-                            font-weight: bold; 
-                            border-radius: 4px; 
-                            cursor: pointer; 
-                            width: 90%;
-                        }
-                        .tombol-print:hover { background-color: #D32F2F; }
-                        
-                        .kotak-label { 
-                            width: 50mm;
-                            height: 50mm;
-                            padding: 3.5mm 1.5mm 1.5mm 1.5mm;
-                            display: flex;
-                            flex-direction: column;
-                            justify-content: flex-start;
-                            align-items: center;
-                            text-align: center;
-                            box-sizing: border-box;
-                            page-break-inside: avoid;
-                            page-break-after: always;
-                            overflow: hidden;
-                        }
-                        .info-teks { 
-                            margin-top: 3px; 
-                            line-height: 1.15; 
-                            width: 100%;
-                            word-wrap: break-word;
-                        }
-                        .timestamp-cetak {
-                            margin-top: auto;
-                            font-size: 7.5pt;
-                            color: #555555;
-                            width: 100%;
-                            padding-bottom: 0.5mm;
-                        }
-                        .tujuan-bold {
-                            font-weight: bold;
-                            font-size: 13pt;
-                        }
-                        img.barcode-qr { 
-                            width: 2.3cm; 
-                            height: 2.3cm; 
-                            object-fit: contain; 
-                        }
-                        
-                        @media print { 
-                            .no-print { display: none !important; } 
-                        }
-                    </style>
-                    </head>
-                    <body>
-                    
-                    <div class="area-tombol no-print">
-                        <button class="tombol-print" onclick="window.print()">🖨️ Print</button>
+            tz_wib = pytz.timezone('Asia/Jakarta')
+            waktu_sekarang = datetime.now(tz_wib).strftime('%d/%m/%Y %I:%M %p')
+
+            try:
+                img_base64 = buat_qr_base64(id_inputan)
+
+                bagian_label = [
+                    f"""
+                    <div class="kotak-label">
+                        <img class="barcode-qr" src="data:image/png;base64,{img_base64}" />
+                        <div class="info-teks">
+                            <span class="tujuan-bold">{tujuan_terdeteksi}</span><br/>
+                            {id_inputan}<br/>
+                            {b}/{jumlah_box_int}
+                        </div>
+                        <div class="timestamp-cetak">{waktu_sekarang}</div>
                     </div>
                     """
+                    for b in range(1, jumlah_box_int + 1)
+                ]
 
-                    for b in range(1, jumlah_box_int + 1):
-                        qr = qrcode.QRCode(version=1, box_size=10, border=1)
-                        qr.add_data(id_inputan)
-                        qr.make(fit=True)
-                        img_qr = qr.make_image(fill_color="black", back_color="white")
+                html_konten = """
+                <html>
+                <head>
+                <style>
+                    @page {
+                        size: 50mm 50mm;
+                        margin: 0;
+                    }
+                    body { 
+                        font-family: 'Calibri', Arial, sans-serif; 
+                        font-size: 11pt;
+                        margin: 0; 
+                        padding: 0;
+                        background: white; 
+                        color: black; 
+                        width: 50mm;
+                        height: 50mm;
+                        box-sizing: border-box;
+                    }
+                    .area-tombol { margin: 5px; text-align: center; }
+                    .tombol-print { 
+                        background-color: #FF4B4B; 
+                        color: white; 
+                        border: none; 
+                        padding: 8px; 
+                        font-size: 13px; 
+                        font-weight: bold; 
+                        border-radius: 4px; 
+                        cursor: pointer; 
+                        width: 90%;
+                    }
+                    .tombol-print:hover { background-color: #D32F2F; }
+                    
+                    .kotak-label { 
+                        width: 50mm;
+                        height: 50mm;
+                        padding: 3.5mm 1.5mm 1.5mm 1.5mm;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: flex-start;
+                        align-items: center;
+                        text-align: center;
+                        box-sizing: border-box;
+                        page-break-inside: avoid;
+                        page-break-after: always;
+                        overflow: hidden;
+                    }
+                    .info-teks { 
+                        margin-top: 3px; 
+                        line-height: 1.15; 
+                        width: 100%;
+                        word-wrap: break-word;
+                    }
+                    .timestamp-cetak {
+                        margin-top: auto;
+                        font-size: 7.5pt;
+                        color: #555555;
+                        width: 100%;
+                        padding-bottom: 0.5mm;
+                    }
+                    .tujuan-bold {
+                        font-weight: bold;
+                        font-size: 13pt;
+                    }
+                    img.barcode-qr { 
+                        width: 2.3cm; 
+                        height: 2.3cm; 
+                        object-fit: contain; 
+                    }
+                    
+                    @media print { 
+                        .no-print { display: none !important; } 
+                    }
+                </style>
+                </head>
+                <body>
+                
+                <div class="area-tombol no-print">
+                    <button class="tombol-print" onclick="window.print()">🖨️ Print</button>
+                </div>
+                """ + "".join(bagian_label) + """
+                </body>
+                </html>
+                """
 
-                        fp = io.BytesIO()
-                        img_qr.save(fp, format="PNG")
-                        fp.seek(0)
+                components.html(html_konten, height=450, scrolling=True)
 
-                        img_base64 = base64.b64encode(fp.read()).decode('utf-8')
-
-                        html_konten += f"""
-                        <div class="kotak-label">
-                            <img class="barcode-qr" src="data:image/png;base64,{img_base64}" />
-                            <div class="info-teks">
-                                <span class="tujuan-bold">{tujuan_terdeteksi}</span><br/>
-                                {id_inputan}<br/>
-                                {b}/{jumlah_box_int}
-                            </div>
-                            <div class="timestamp-cetak">{waktu_sekarang}</div>
-                        </div>
-                        """
-
-                    html_konten += """
-                    </body>
-                    </html>
-                    """
-
-                    components.html(html_konten, height=450, scrolling=True)
-
-                except Exception as err:
-                    st.error(f"Gagal memproses pratinjau cetak: {err}")
-            else:
-                st.error(f"❌ ID '{id_inputan}' TIDAK DITEMUKAN pada Database Google Sheets!")
+            except Exception as err:
+                st.error(f"Gagal memproses pratinjau cetak: {err}")
+        else:
+            st.error(f"❌ ID '{id_inputan}' TIDAK DITEMUKAN pada Database Google Sheets!")
